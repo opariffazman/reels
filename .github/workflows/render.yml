@@ -1,0 +1,84 @@
+name: Render videos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "remotion.config.ts"
+  workflow_dispatch:
+    inputs:
+      composition:
+        description: "Composition ID to render (leave blank for all)"
+        required: false
+        default: ""
+
+jobs:
+  render:
+    name: Render ${{ matrix.composition }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        composition:
+          - homelab-automation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            ffmpeg \
+            libgbm-dev \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libasound2t64
+
+      # Decode music from secret if set, otherwise generate silent placeholder
+      - name: Prepare background music
+        env:
+          BG_MUSIC_B64: ${{ secrets.BG_MUSIC_B64 }}
+        run: |
+          MUSIC_PATH="public/content/homelab-automation/bg-music.mp3"
+          if [ -n "$BG_MUSIC_B64" ]; then
+            echo "$BG_MUSIC_B64" | base64 -d > "$MUSIC_PATH"
+            echo "Music restored from secret."
+          else
+            echo "No BG_MUSIC_B64 secret found — generating silent placeholder."
+            ffmpeg -f lavfi -i anullsrc=r=44100:cl=stereo -t 120 -q:a 9 -acodec libmp3lame "$MUSIC_PATH" -y -loglevel quiet
+          fi
+
+      - name: Render ${{ matrix.composition }}
+        run: |
+          npx remotion render ${{ matrix.composition }} \
+            out/${{ matrix.composition }}.mp4 \
+            --codec=h264 \
+            --crf=1 \
+            --jpeg-quality=100
+
+      - name: Upload rendered video
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.composition }}
+          path: out/${{ matrix.composition }}.mp4
+          retention-days: 30
