@@ -40,7 +40,6 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y \
-            ffmpeg \
             libgbm-dev \
             libnss3 \
             libatk1.0-0 \
@@ -53,20 +52,6 @@ jobs:
             libpango-1.0-0 \
             libcairo2 \
             libasound2t64
-
-      # Decode music from secret if set, otherwise generate silent placeholder
-      - name: Prepare background music
-        env:
-          BG_MUSIC_B64: ${{ secrets.BG_MUSIC_B64 }}
-        run: |
-          MUSIC_PATH="public/content/homelab-automation/bg-music.mp3"
-          if [ -n "$BG_MUSIC_B64" ]; then
-            echo "$BG_MUSIC_B64" | base64 -d > "$MUSIC_PATH"
-            echo "Music restored from secret."
-          else
-            echo "No BG_MUSIC_B64 secret found — generating silent placeholder."
-            ffmpeg -f lavfi -i anullsrc=r=44100:cl=stereo -t 120 -q:a 9 -acodec libmp3lame "$MUSIC_PATH" -y -loglevel quiet
-          fi
 
       - name: Render ${{ matrix.composition }}
         run: |
