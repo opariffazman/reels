@@ -36,6 +36,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Chrome headless shell (~170 MB) — cache by node_modules hash
+      - name: Cache Chrome headless shell
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: chrome-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: chrome-${{ runner.os }}-
+
+      # Webpack module cache — speeds up re-bundling when only assets change
+      - name: Cache webpack bundle
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache
+          key: webpack-${{ runner.os }}-${{ hashFiles('src/**', 'remotion.config.ts', 'package-lock.json') }}
+          restore-keys: webpack-${{ runner.os }}-
+
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
