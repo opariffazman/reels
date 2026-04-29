@@ -11,6 +11,8 @@
     "@remotion/google-fonts": "4.0.446",
     "@remotion/layout-utils": "4.0.446",
     "@remotion/media": "4.0.446",
+    "@remotion/transitions": "4.0.446",
+    "@mdi/js": "^7.4.47",
     "@remotion/zod-types": "4.0.446",
     "react": "19.2.3",
     "react-dom": "19.2.3",
