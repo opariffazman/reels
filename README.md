@@ -9,6 +9,8 @@ Short-form DevOps videos built with [Remotion](https://remotion.dev) — portrai
 | # | Title | Composition ID |
 |---|-------|---------------|
 | 01 | How I automate my homelab infrastructure | `homelab-automation` |
+| 02 | T9 App Dialer | `t9-app-dialer` |
+| 03 | What happens when you let agentic AI take the wheel (ClawdLens) | `clawdlens` |
 
 ## Getting started
 
