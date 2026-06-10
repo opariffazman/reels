@@ -78,35 +78,35 @@ const CAPTIONS: Caption[] = [
     fontSize: 58,
   },
   {
-    text: "So I let AI write the full redesign spec",
+    text: "Full redesign specification, generated",
     from: SEG_START[1] + 12,
     durationInFrames: 168,
     kind: "info",
-    fontSize: 40,
+    fontSize: 42,
   },
   {
-    text: "All I do is press 'y'",
+    text: "Input: y. Confirmed.",
     from: SEG_START[2] + 24,
     durationInFrames: 90,
     kind: "hero",
-    fontSize: 76,
+    fontSize: 60,
   },
   {
-    text: "Then it gets to work",
+    text: "Reading. Planning. Building.",
     from: SEG_START[3] + 48,
     durationInFrames: 220,
     kind: "info",
     fontSize: 42,
   },
   {
-    text: "And this HUD? Built on the new Claude Fable",
+    text: "Powered by the new Claude Fable",
     from: SEG_START[3] + 320,
     durationInFrames: 240,
     kind: "info",
     fontSize: 40,
   },
   {
-    text: "New site? Stay tuned.",
+    text: "Result pending. Stand by.",
     from: SEG_START[3] + 595,
     durationInFrames: CLAWDLENSV2_TOTAL_FRAMES - (SEG_START[3] + 595),
     kind: "info",
@@ -115,10 +115,11 @@ const CAPTIONS: Caption[] = [
   },
 ];
 
-// --- Robot-voice TTS (piper), one clip per caption. Durations are measured
-// mp3 lengths in frames; each starts on its caption's `from`. -----------------
+// --- Robot-voice TTS (piper), system-narrator register. Each starts on its
+// caption's `from`. CAPTIONS[0] (the "Gen 'y'" title) is intentionally SILENT
+// — it plays as a typed main-title card with keystroke clicks only, then the
+// narration starts once the operation begins. ---------------------------------
 const VOICEOVER: { file: string; from: number }[] = [
-  { file: "voiceover/clawdlens-v2/01.mp3", from: CAPTIONS[0].from },
   { file: "voiceover/clawdlens-v2/02.mp3", from: CAPTIONS[1].from },
   { file: "voiceover/clawdlens-v2/03.mp3", from: CAPTIONS[2].from },
   { file: "voiceover/clawdlens-v2/04.mp3", from: CAPTIONS[3].from },
