@@ -6,8 +6,9 @@ dist
 # Rendered output
 out
 
-# Raw source recordings / local renders at repo root (too large for git)
+# Raw source recordings / local renders / working-copy audio at repo root
 /*.mp4
+/*.mp3
 
 # Raw source screenshots (reference only)
 screenshots/

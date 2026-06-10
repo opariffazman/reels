@@ -6,6 +6,10 @@ import {
   ClawdLensVideo,
   CLAWDLENS_TOTAL_FRAMES,
 } from "./components/ClawdLensVideo";
+import {
+  ClawdLensV2Video,
+  CLAWDLENSV2_TOTAL_FRAMES,
+} from "./components/ClawdLensV2Video";
 
 const T9_TOTAL_DURATION = 1500;
 
@@ -34,6 +38,14 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
       durationInFrames={CLAWDLENS_TOTAL_FRAMES}
+    />
+    <Composition
+      id="clawdlens-v2"
+      component={ClawdLensV2Video}
+      fps={30}
+      width={1080}
+      height={1920}
+      durationInFrames={CLAWDLENSV2_TOTAL_FRAMES}
     />
   </>
 );
