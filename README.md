@@ -11,6 +11,7 @@ Short-form DevOps videos built with [Remotion](https://remotion.dev) — portrai
 | 01 | How I automate my homelab infrastructure | `homelab-automation` |
 | 02 | T9 App Dialer | `t9-app-dialer` |
 | 03 | What happens when you let agentic AI take the wheel (ClawdLens) | `clawdlens` |
+| 04 | There's Gen Z, but I'm Gen 'y' (ClawdLens v2 — AI redesigns my website) | `clawdlens-v2` |
 
 ## Getting started
 
