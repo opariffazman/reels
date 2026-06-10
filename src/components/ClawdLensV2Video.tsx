@@ -28,6 +28,8 @@ import { TypingText } from "./TypingText";
 const BASE_VIDEO = "content/devops1-bootcamp/clawdlens-v2.mp4";
 const CLICK_SFX = "content/devops1-bootcamp/sfx/click.mp3";
 const DING_SFX = "content/devops1-bootcamp/sfx/ding.mp3";
+const MUSIC = "content/devops1-bootcamp/bg-music-clawdlens-v2.mp3"; // "Wrong" — Dan Henig
+const DEMO_VIDEO = "content/devops1-bootcamp/clawdlens-demo.mp4"; // VHS HUD demo for the CTA
 
 const FPS = 30;
 const sec = (s: number) => Math.round(s * FPS);
@@ -41,7 +43,12 @@ const SEGMENTS: { fromSec: number; toSec: number; note: string }[] = [
 ];
 
 const SEG_FRAMES = SEGMENTS.map((s) => sec(s.toSec) - sec(s.fromSec));
-export const CLAWDLENSV2_TOTAL_FRAMES = SEG_FRAMES.reduce((a, b) => a + b, 0);
+const FOOTAGE_FRAMES = SEG_FRAMES.reduce((a, b) => a + b, 0);
+
+// A CTA end card (ClawdLens demo + "try it") plays after the footage so the
+// reel resolves with a call-to-action instead of cutting out abruptly.
+const OUTRO_FRAMES = sec(5);
+export const CLAWDLENSV2_TOTAL_FRAMES = FOOTAGE_FRAMES + OUTRO_FRAMES;
 
 // Cumulative composition-frame where each segment starts (for caption timing).
 const SEG_START: number[] = SEG_FRAMES.reduce<number[]>((acc, d, i) => {
@@ -108,7 +115,7 @@ const CAPTIONS: Caption[] = [
   {
     text: "Result pending. Stand by.",
     from: SEG_START[3] + 595,
-    durationInFrames: CLAWDLENSV2_TOTAL_FRAMES - (SEG_START[3] + 595),
+    durationInFrames: FOOTAGE_FRAMES - (SEG_START[3] + 595),
     kind: "info",
     emphasis: true,
     fontSize: 52,
@@ -119,13 +126,44 @@ const CAPTIONS: Caption[] = [
 // caption's `from`. CAPTIONS[0] (the "Gen 'y'" title) is intentionally SILENT
 // — it plays as a typed main-title card with keystroke clicks only, then the
 // narration starts once the operation begins. ---------------------------------
-const VOICEOVER: { file: string; from: number }[] = [
-  { file: "voiceover/clawdlens-v2/02.mp3", from: CAPTIONS[1].from },
-  { file: "voiceover/clawdlens-v2/03.mp3", from: CAPTIONS[2].from },
-  { file: "voiceover/clawdlens-v2/04.mp3", from: CAPTIONS[3].from },
-  { file: "voiceover/clawdlens-v2/05.mp3", from: CAPTIONS[4].from },
-  { file: "voiceover/clawdlens-v2/06.mp3", from: CAPTIONS[5].from },
+const VOICEOVER: { file: string; from: number; durationInFrames: number }[] = [
+  { file: "voiceover/clawdlens-v2/02.mp3", from: CAPTIONS[1].from, durationInFrames: 81 },
+  { file: "voiceover/clawdlens-v2/03.mp3", from: CAPTIONS[2].from, durationInFrames: 81 },
+  { file: "voiceover/clawdlens-v2/04.mp3", from: CAPTIONS[3].from, durationInFrames: 72 },
+  { file: "voiceover/clawdlens-v2/05.mp3", from: CAPTIONS[4].from, durationInFrames: 60 },
+  { file: "voiceover/clawdlens-v2/06.mp3", from: CAPTIONS[5].from, durationInFrames: 68 },
 ];
+
+// --- Music bed ("Wrong" — Dan Henig). Fades in at the top, ducks under each
+// VO line, then fades out under the CTA outro. ---------------------------------
+const MUSIC_BASE = 0.38; // bed level with no voice (hook, gaps, outro)
+const MUSIC_DUCK = 0.13; // bed level under narration
+const MUSIC_RAMP = 10;
+
+const musicVolume = (f: number): number => {
+  const envelope = interpolate(
+    f,
+    [0, 14, CLAWDLENSV2_TOTAL_FRAMES - 42, CLAWDLENSV2_TOTAL_FRAMES],
+    [0, MUSIC_BASE, MUSIC_BASE, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+  );
+  let duck = 1;
+  for (const vo of VOICEOVER) {
+    const d = interpolate(
+      f,
+      [
+        vo.from - MUSIC_RAMP,
+        vo.from,
+        vo.from + vo.durationInFrames,
+        vo.from + vo.durationInFrames + MUSIC_RAMP,
+      ],
+      [1, MUSIC_DUCK / MUSIC_BASE, MUSIC_DUCK / MUSIC_BASE, 1],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+    );
+    duck = Math.min(duck, d);
+  }
+  return envelope * duck;
+};
 
 /** Per-keystroke click SFX while a hero line types in. */
 const TypingClicks: React.FC<{ charCount: number }> = ({ charCount }) => {
@@ -258,9 +296,99 @@ const InfoBeat: React.FC<{
   );
 };
 
+/**
+ * CTA end card: the real ClawdLens TUI (VHS demo) framed, with a "try it"
+ * call-to-action. Gives the reel a deliberate ending and drives to GitHub —
+ * the actual link goes in the post comment.
+ */
+const OutroCTA: React.FC = () => {
+  const frame = useCurrentFrame();
+  const appear = interpolate(frame, [0, 14], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const rise = interpolate(frame, [0, 20], [44, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: COLORS.bg,
+        opacity: appear,
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 56,
+        padding: 64,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: INTER,
+          fontWeight: 700,
+          fontSize: 30,
+          letterSpacing: 5,
+          color: COLORS.accent,
+          textTransform: "uppercase",
+          transform: `translateY(${rise}px)`,
+        }}
+      >
+        Run it yourself
+      </div>
+
+      <div
+        style={{
+          width: 940,
+          borderRadius: 22,
+          overflow: "hidden",
+          border: `2px solid ${COLORS.accent}`,
+          boxShadow: "0 0 70px rgba(34,197,94,0.35), 0 30px 80px rgba(0,0,0,0.7)",
+          transform: `translateY(${rise}px)`,
+        }}
+      >
+        <Video
+          src={staticFile(DEMO_VIDEO)}
+          loop
+          muted
+          style={{ width: "100%", display: "block" }}
+        />
+      </div>
+
+      <div style={{ textAlign: "center", transform: `translateY(${rise}px)` }}>
+        <div
+          style={{
+            fontFamily: INTER,
+            fontWeight: 800,
+            fontSize: 88,
+            letterSpacing: -1,
+            color: COLORS.white,
+            lineHeight: 1.02,
+          }}
+        >
+          ClawdLens CLI
+        </div>
+        <div
+          style={{
+            marginTop: 20,
+            fontFamily: INTER,
+            fontWeight: 700,
+            fontSize: 40,
+            color: COLORS.accent,
+          }}
+        >
+          free on GitHub — link in comments ↓
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const ClawdLensV2Video: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.bg }}>
+      {/* Music bed — fades in, ducks under narration, fades out under the CTA. */}
+      <Audio src={staticFile(MUSIC)} volume={musicVolume} />
+
       {/* Cut footage: trimmed segments played back to back (no audio). */}
       <Series>
         {SEGMENTS.map((s, i) => (
@@ -313,12 +441,22 @@ export const ClawdLensV2Video: React.FC = () => {
         <Audio src={staticFile(DING_SFX)} volume={0.9} />
       </Sequence>
 
-      {/* Robot-voice TTS, one clip per caption (no music to duck) */}
+      {/* Robot-voice TTS, one clip per caption (music ducks underneath) */}
       {VOICEOVER.map((vo) => (
         <Sequence key={vo.file} from={vo.from} premountFor={FPS}>
           <Audio src={staticFile(vo.file)} volume={1.1} />
         </Sequence>
       ))}
+
+      {/* CTA end card — plays after the footage, with a reveal ding */}
+      <Sequence
+        from={FOOTAGE_FRAMES}
+        durationInFrames={OUTRO_FRAMES}
+        premountFor={FPS}
+      >
+        <OutroCTA />
+        <Audio src={staticFile(DING_SFX)} volume={0.6} />
+      </Sequence>
     </AbsoluteFill>
   );
 };
