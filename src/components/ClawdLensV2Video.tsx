@@ -46,8 +46,9 @@ const SEG_FRAMES = SEGMENTS.map((s) => sec(s.toSec) - sec(s.fromSec));
 const FOOTAGE_FRAMES = SEG_FRAMES.reduce((a, b) => a + b, 0);
 
 // A CTA end card (ClawdLens demo + "try it") plays after the footage so the
-// reel resolves with a call-to-action instead of cutting out abruptly.
-const OUTRO_FRAMES = sec(5);
+// reel resolves with a call-to-action instead of cutting out abruptly. 10s so
+// the demo tours its panels (Tasks → Git → Log → HUD) instead of looking static.
+const OUTRO_FRAMES = sec(10);
 export const CLAWDLENSV2_TOTAL_FRAMES = FOOTAGE_FRAMES + OUTRO_FRAMES;
 
 // Cumulative composition-frame where each segment starts (for caption timing).
