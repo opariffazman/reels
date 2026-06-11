@@ -1,8 +1,10 @@
 import {
   AbsoluteFill,
+  Audio,
   Sequence,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -59,6 +61,56 @@ const CTA_REVEAL_FROM = 795;
 
 const CHAR_FRAMES = 2;
 const CURSOR_BLINK = 16;
+
+// ---- Audio ----
+const MUSIC = "content/docker-cta/bg-music.mp3";
+const CLICK_SFX = "content/devops1-bootcamp/sfx/click.mp3";
+const DING_SFX = "content/devops1-bootcamp/sfx/ding.mp3";
+const WHOOSH_SFX = "content/docker-cta/sfx/whoosh.mp3";
+const SWELL_SFX = "content/docker-cta/sfx/swell.mp3";
+
+const MUSIC_BASE = 0.36; // bed level in gaps
+const MUSIC_DUCK = 0.14; // bed level under VO
+const DUCK_RAMP = 8;
+
+// VO clips 01–09 on the absolute timeline (durationInFrames = measured).
+const VOICEOVER: { file: string; from: number; durationInFrames: number }[] = [
+  { file: "voiceover/docker-cta/01.mp3", from: 8, durationInFrames: 78 },
+  { file: "voiceover/docker-cta/02.mp3", from: 150, durationInFrames: 58 },
+  { file: "voiceover/docker-cta/03.mp3", from: 258, durationInFrames: 32 },
+  { file: "voiceover/docker-cta/04.mp3", from: 312, durationInFrames: 40 },
+  { file: "voiceover/docker-cta/05.mp3", from: 378, durationInFrames: 59 },
+  { file: "voiceover/docker-cta/06.mp3", from: 444, durationInFrames: 38 },
+  { file: "voiceover/docker-cta/07.mp3", from: 510, durationInFrames: 52 },
+  { file: "voiceover/docker-cta/08.mp3", from: 576, durationInFrames: 56 },
+  { file: "voiceover/docker-cta/09.mp3", from: 660, durationInFrames: 74 },
+];
+
+// Music bed: fade in, hold at base, fade out; ducked under each VO window.
+const musicVolume = (f: number): number => {
+  const envelope = interpolate(
+    f,
+    [0, 20, DOCKERCTA_TOTAL_FRAMES - 30, DOCKERCTA_TOTAL_FRAMES],
+    [0, MUSIC_BASE, MUSIC_BASE, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+  );
+  let duck = 1;
+  for (const vo of VOICEOVER) {
+    const d = interpolate(
+      f,
+      [
+        vo.from - DUCK_RAMP,
+        vo.from,
+        vo.from + vo.durationInFrames,
+        vo.from + vo.durationInFrames + DUCK_RAMP,
+      ],
+      [1, MUSIC_DUCK / MUSIC_BASE, MUSIC_DUCK / MUSIC_BASE, 1],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+    );
+    duck = Math.min(duck, d);
+  }
+  return envelope * duck;
+};
 
 // ---- Animated gradient background ----
 const Background: React.FC = () => {
@@ -421,9 +473,27 @@ const CtaBeat: React.FC = () => {
   );
 };
 
+const CLICK_EVERY = 2;
+const TypingClicks: React.FC<{ charCount: number }> = ({ charCount }) => {
+  const clicks = [];
+  for (let i = 0; i < charCount; i += CLICK_EVERY) {
+    clicks.push(
+      <Sequence
+        key={i}
+        from={i * CHAR_FRAMES}
+        durationInFrames={CLICK_EVERY * CHAR_FRAMES}
+      >
+        <Audio src={staticFile(CLICK_SFX)} volume={0.5} />
+      </Sequence>,
+    );
+  }
+  return <>{clicks}</>;
+};
+
 export const DockerCtaVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: DOCKER.navyDeep }}>
+      <Audio src={staticFile(MUSIC)} volume={musicVolume} />
       <Background />
       <Sequence from={HOOK_FROM} durationInFrames={HOOK_DUR}>
         <HookBeat />
@@ -436,6 +506,35 @@ export const DockerCtaVideo: React.FC = () => {
       </Sequence>
       <Sequence from={CTA_FROM} durationInFrames={CTA_DUR}>
         <CtaBeat />
+      </Sequence>
+
+      {/* Voiceover (clips 01–09; venue + CTA close are silent by design) */}
+      {VOICEOVER.map((vo) => (
+        <Sequence key={vo.file} from={vo.from}>
+          <Audio src={staticFile(vo.file)} volume={1.1} />
+        </Sequence>
+      ))}
+
+      {/* SFX accents */}
+      <Sequence from={HOOK_FROM}>
+        <TypingClicks charCount={"Master Docker in 3 days".length} />
+      </Sequence>
+      <Sequence from={HOOK_FROM + 23 * CHAR_FRAMES}>
+        <Audio src={staticFile(DING_SFX)} volume={0.8} />
+      </Sequence>
+      <Sequence from={BRAND_FROM}>
+        <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
+      </Sequence>
+      {CARDS.map((c) => (
+        <Sequence key={`sfx-${c.label}`} from={c.from} durationInFrames={8}>
+          <Audio src={staticFile(CLICK_SFX)} volume={0.7} />
+        </Sequence>
+      ))}
+      <Sequence from={CTA_REVEAL_FROM}>
+        <Audio src={staticFile(SWELL_SFX)} volume={0.8} />
+      </Sequence>
+      <Sequence from={CTA_REVEAL_FROM + 6}>
+        <Audio src={staticFile(DING_SFX)} volume={0.9} />
       </Sequence>
     </AbsoluteFill>
   );
