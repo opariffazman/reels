@@ -10,6 +10,10 @@ import {
   ClawdLensV2Video,
   CLAWDLENSV2_TOTAL_FRAMES,
 } from "./components/ClawdLensV2Video";
+import {
+  DockerCtaVideo,
+  DOCKERCTA_TOTAL_FRAMES,
+} from "./components/DockerCtaVideo";
 
 const T9_TOTAL_DURATION = 1500;
 
@@ -46,6 +50,14 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
       durationInFrames={CLAWDLENSV2_TOTAL_FRAMES}
+    />
+    <Composition
+      id="docker-cta"
+      component={DockerCtaVideo}
+      fps={30}
+      width={1080}
+      height={1920}
+      durationInFrames={DOCKERCTA_TOTAL_FRAMES}
     />
   </>
 );
