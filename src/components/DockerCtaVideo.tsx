@@ -76,11 +76,14 @@ const EXPLAIN_APP_LABEL = "your app + all its deps";
 const EXPLAIN_TAGLINE = "runs the SAME everywhere";
 
 // ---- Audio ----
+const MUSIC_ENABLED = false; // music bed disabled for now; flip to true to restore
 const MUSIC = "content/docker-cta/bg-music.mp3";
 const CLICK_SFX = "content/devops1-bootcamp/sfx/click.mp3";
 const DING_SFX = "content/devops1-bootcamp/sfx/ding.mp3";
 const WHOOSH_SFX = "content/docker-cta/sfx/whoosh.mp3";
 const SWELL_SFX = "content/docker-cta/sfx/swell.mp3";
+const EXPLAIN_PAD_SFX = "content/docker-cta/sfx/explain-pad.mp3";
+const CHIME3_SFX = "content/docker-cta/sfx/chime3.mp3";
 
 const MUSIC_BASE = 0.36; // bed level in gaps
 const MUSIC_DUCK = 0.14; // bed level under VO
@@ -709,7 +712,7 @@ const TypingClicks: React.FC<{ charCount: number }> = ({ charCount }) => {
 export const DockerCtaVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: DOCKER.navyDeep }}>
-      <Audio src={staticFile(MUSIC)} volume={musicVolume} />
+      {MUSIC_ENABLED && <Audio src={staticFile(MUSIC)} volume={musicVolume} />}
       <Background />
       <Sequence from={HOOK_FROM} durationInFrames={HOOK_DUR}>
         <HookBeat />
@@ -743,6 +746,23 @@ export const DockerCtaVideo: React.FC = () => {
       </Sequence>
       <Sequence from={BRAND_FROM}>
         <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
+      </Sequence>
+
+      {/* Explainer beat SFX (silent VO; SFX carries the beat) */}
+      <Sequence from={EXPLAIN_FROM}>
+        <Audio src={staticFile(EXPLAIN_PAD_SFX)} volume={0.5} />
+      </Sequence>
+      <Sequence from={EXPLAIN_FROM + 30}>
+        <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
+      </Sequence>
+      <Sequence from={EXPLAIN_FROM + 90}>
+        <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
+      </Sequence>
+      <Sequence from={EXPLAIN_FROM + 155}>
+        <Audio src={staticFile(CHIME3_SFX)} volume={0.8} />
+      </Sequence>
+      <Sequence from={EXPLAIN_FROM + 280}>
+        <Audio src={staticFile(DING_SFX)} volume={0.8} />
       </Sequence>
       {CARDS.map((c) => (
         <Sequence key={`sfx-${c.label}`} from={c.from} durationInFrames={8}>
