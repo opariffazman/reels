@@ -87,6 +87,8 @@ const BLIP_RISE_SFX = "content/docker-cta/sfx/blip-rise.mp3";
 const BLIP_LOW_SFX = "content/docker-cta/sfx/blip-low.mp3";
 const BLIP_STEPS_SFX = "content/docker-cta/sfx/blip-steps.mp3";
 const CONFIRM_SFX = "content/docker-cta/sfx/confirm.mp3";
+const IMPACT_SFX = "content/docker-cta/sfx/impact.mp3";
+const BOOM_SFX = "content/docker-cta/sfx/boom.mp3";
 
 const MUSIC_BASE = 0.36; // bed level in gaps
 const MUSIC_DUCK = 0.14; // bed level under VO
@@ -131,6 +133,50 @@ const musicVolume = (f: number): number => {
   return envelope * duck;
 };
 
+// ---- Shared motion ----
+const PUNCH = { damping: 9, stiffness: 240 } as const; // overshoot for slams/reveals
+const SETTLE = { damping: 16, stiffness: 180 } as const; // gentle settle
+
+// Decaying screen-shake keyed to impact frames (local).
+const Shake: React.FC<{
+  impacts: number[];
+  amplitude?: number;
+  children: React.ReactNode;
+}> = ({ impacts, amplitude = 18, children }) => {
+  const frame = useCurrentFrame();
+  let dx = 0;
+  let dy = 0;
+  for (const hit of impacts) {
+    const t = frame - hit;
+    if (t >= 0 && t < 12) {
+      const decay = 1 - t / 12;
+      dx += Math.sin(t * 2.1) * amplitude * decay;
+      dy += Math.cos(t * 2.7) * amplitude * decay;
+    }
+  }
+  return <div style={{ transform: `translate(${dx}px, ${dy}px)` }}>{children}</div>;
+};
+
+// Soft white flash at given frames (reads the frame of whatever context it is
+// mounted in). Peak <= 0.6, <= 2 frames, never a repeating strobe.
+const Flash: React.FC<{ hits: number[]; peak?: number }> = ({
+  hits,
+  peak = 0.55,
+}) => {
+  const frame = useCurrentFrame();
+  let o = 0;
+  for (const hit of hits) {
+    const t = frame - hit;
+    if (t >= 0 && t < 2) o = Math.max(o, peak * (1 - t / 2));
+  }
+  if (o <= 0) return null;
+  return (
+    <AbsoluteFill
+      style={{ background: "#FFFFFF", opacity: o, pointerEvents: "none" }}
+    />
+  );
+};
+
 // ---- Animated gradient background ----
 const Background: React.FC = () => {
   const frame = useCurrentFrame();
@@ -151,10 +197,58 @@ const Background: React.FC = () => {
   );
 };
 
-// ---- Beat 1: typewriter hook ----
+// ---- Beat 1: high-energy slam hook (VO-silent) ----
+const HOOK_DOYOU = 45; // local frame the "DO YOU?" hero slam takes over
+const HOOK_WHIP = 85; // local frame the whip-out begins
+
+const SlamWord: React.FC<{ text: string; from: number; size: number }> = ({
+  text,
+  from,
+  size,
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  if (frame < from) return null;
+  const p = spring({ frame: frame - from, fps, config: PUNCH });
+  const scale = interpolate(p, [0, 1], [1.4, 1.0]);
+  // Visible from the word's first frame (frame 0 loaded) — the slam rides on the
+  // scale punch, not a fade-up.
+  const opacity = interpolate(frame - from, [0, 1], [0.5, 1], {
+    extrapolateRight: "clamp",
+  });
+  return (
+    <div
+      style={{
+        transform: `scale(${scale})`,
+        opacity,
+        fontFamily: INTER,
+        fontWeight: 900,
+        fontSize: size,
+        letterSpacing: -2,
+        lineHeight: 1.0,
+        color: DOCKER.white,
+        textShadow: "0 6px 30px rgba(0,0,0,0.5)",
+      }}
+    >
+      {text}
+    </div>
+  );
+};
+
 const HookBeat: React.FC = () => {
   const frame = useCurrentFrame();
-  const out = interpolate(frame, [HOOK_DUR - 16, HOOK_DUR], [1, 0], {
+  const { fps } = useVideoConfig();
+  const showStack = frame < HOOK_DOYOU;
+  const doYou = spring({ frame: frame - HOOK_DOYOU, fps, config: PUNCH });
+  const doYouScale = interpolate(doYou, [0, 1], [1.6, 1.0]);
+  const stackZoom = interpolate(frame, [0, HOOK_DOYOU], [1, 1.08], {
+    extrapolateRight: "clamp",
+  });
+  const whip = interpolate(frame, [HOOK_WHIP, HOOK_DUR], [1, 1.6], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const whipFade = interpolate(frame, [HOOK_WHIP, HOOK_DUR], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -163,29 +257,43 @@ const HookBeat: React.FC = () => {
       style={{
         justifyContent: "center",
         alignItems: "center",
-        opacity: out,
-        padding: 80,
+        padding: 70,
+        transform: `scale(${whip})`,
+        opacity: whipFade,
       }}
     >
-      <div
-        style={{
-          fontFamily: MONO,
-          fontWeight: 700,
-          fontSize: 96,
-          lineHeight: 1.18,
-          letterSpacing: -1,
-          color: DOCKER.white,
-          textAlign: "center",
-          textShadow: "0 6px 30px rgba(0,0,0,0.45)",
-        }}
-      >
-        <TypingText
-          text={"Master Docker in 3 days"}
-          charFrames={CHAR_FRAMES}
-          cursorBlinkFrames={CURSOR_BLINK}
-          cursorColor={DOCKER.ice}
-        />
-      </div>
+      <Shake impacts={[0, 10, 20, HOOK_DOYOU]} amplitude={22}>
+        {showStack ? (
+          <div
+            style={{
+              transform: `scale(${stackZoom})`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <SlamWord text="EVERYONE" from={0} size={118} />
+            <SlamWord text="USES" from={10} size={118} />
+            <SlamWord text="DOCKER." from={20} size={150} />
+          </div>
+        ) : (
+          <div
+            style={{
+              transform: `scale(${doYouScale})`,
+              fontFamily: INTER,
+              fontWeight: 900,
+              fontSize: 170,
+              letterSpacing: -3,
+              whiteSpace: "nowrap",
+              color: DOCKER.white,
+              textShadow: "0 8px 40px rgba(0,0,0,0.55)",
+            }}
+          >
+            DO YOU?
+          </div>
+        )}
+      </Shake>
     </AbsoluteFill>
   );
 };
@@ -358,7 +466,7 @@ const ExplainerBeat: React.FC = () => {
   const card = spring({
     frame: frame - 30,
     fps,
-    config: { damping: 16, stiffness: 180 },
+    config: SETTLE,
   });
   const cardX = interpolate(card, [0, 1], [520, 0]);
   const whale = spring({
@@ -741,11 +849,21 @@ export const DockerCtaVideo: React.FC = () => {
       ))}
 
       {/* SFX accents */}
+      {/* Slam-hook hits: impact per word, boom on "DO YOU?", whoosh on the whip */}
       <Sequence from={HOOK_FROM}>
-        <TypingClicks charCount={"Master Docker in 3 days".length} />
+        <Audio src={staticFile(IMPACT_SFX)} volume={0.6} />
       </Sequence>
-      <Sequence from={HOOK_FROM + 23 * CHAR_FRAMES}>
-        <Audio src={staticFile(DING_SFX)} volume={0.8} />
+      <Sequence from={HOOK_FROM + 10}>
+        <Audio src={staticFile(IMPACT_SFX)} volume={0.6} />
+      </Sequence>
+      <Sequence from={HOOK_FROM + 20}>
+        <Audio src={staticFile(IMPACT_SFX)} volume={0.65} />
+      </Sequence>
+      <Sequence from={HOOK_FROM + HOOK_DOYOU}>
+        <Audio src={staticFile(BOOM_SFX)} volume={0.7} />
+      </Sequence>
+      <Sequence from={HOOK_FROM + HOOK_WHIP}>
+        <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
       </Sequence>
       <Sequence from={BRAND_FROM}>
         <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
@@ -783,6 +901,8 @@ export const DockerCtaVideo: React.FC = () => {
       <Sequence from={CTA_REVEAL_FROM + 6}>
         <Audio src={staticFile(DING_SFX)} volume={0.9} />
       </Sequence>
+      {/* Soft white flashes on the big hits (reads absolute frame at root) */}
+      <Flash hits={[0, HOOK_FROM + HOOK_DOYOU]} />
     </AbsoluteFill>
   );
 };
