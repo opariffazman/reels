@@ -25,7 +25,7 @@ import { INTER, MONO } from "../fonts";
 import { MdiIcon } from "./MdiIcon";
 import { TypingText } from "./TypingText";
 
-export const DOCKERCTA_TOTAL_FRAMES = 1200;
+export const DOCKERCTA_TOTAL_FRAMES = 915;
 
 // ---- Docker-brand theme tokens ----
 const DOCKER = {
@@ -45,29 +45,29 @@ const DOCKER = {
 const HOOK_FROM = 0;
 const HOOK_DUR = 100;
 const BRAND_FROM = 100;
-const BRAND_DUR = 155;
+const BRAND_DUR = 135;
 
 // Explainer beat ("what is Docker"); everything below shifts +300 vs the 30s cut.
-const EXPLAIN_FROM = 255;
-const EXPLAIN_DUR = 300;
+const EXPLAIN_FROM = 235;
+const EXPLAIN_DUR = 195;
 
-const CURR_FROM = 555;
-const CURR_DUR = 405;
-const CTA_FROM = 960;
-const CTA_DUR = 240;
+const CURR_FROM = 430;
+const CURR_DUR = 290;
+const CTA_FROM = 720;
+const CTA_DUR = 195;
 
-const HEADER_FROM = 555;
+const HEADER_FROM = 430;
 const CARDS: { label: string; from: number }[] = [
-  { label: "Docker Basics", from: 609 },
-  { label: "Images & Containers", from: 675 },
-  { label: "Docker Compose", from: 741 },
-  { label: "Troubleshoot & Secure", from: 807 },
-  { label: "Backup & Restore", from: 873 },
+  { label: "Docker Basics", from: 464 },
+  { label: "Images & Containers", from: 500 },
+  { label: "Docker Compose", from: 552 },
+  { label: "Troubleshoot & Secure", from: 590 },
+  { label: "Backup & Restore", from: 636 },
 ];
 
-const DATE_FROM = 960;
-const VENUE_FROM = 1035;
-const CTA_REVEAL_FROM = 1095;
+const DATE_FROM = 728;
+const VENUE_FROM = 800;
+const CTA_REVEAL_FROM = 840;
 
 const CHAR_FRAMES = 2;
 const CURSOR_BLINK = 16;
@@ -83,10 +83,6 @@ const CLICK_SFX = "content/devops1-bootcamp/sfx/click.mp3";
 const DING_SFX = "content/devops1-bootcamp/sfx/ding.mp3";
 const WHOOSH_SFX = "content/docker-cta/sfx/whoosh.mp3";
 const SWELL_SFX = "content/docker-cta/sfx/swell.mp3";
-const BLIP_RISE_SFX = "content/docker-cta/sfx/blip-rise.mp3";
-const BLIP_LOW_SFX = "content/docker-cta/sfx/blip-low.mp3";
-const BLIP_STEPS_SFX = "content/docker-cta/sfx/blip-steps.mp3";
-const CONFIRM_SFX = "content/docker-cta/sfx/confirm.mp3";
 const IMPACT_SFX = "content/docker-cta/sfx/impact.mp3";
 const BOOM_SFX = "content/docker-cta/sfx/boom.mp3";
 
@@ -96,15 +92,15 @@ const DUCK_RAMP = 8;
 
 // VO clips 01–09 on the absolute timeline (durationInFrames = measured).
 const VOICEOVER: { file: string; from: number; durationInFrames: number }[] = [
-  { file: "voiceover/docker-cta/02.mp3", from: 106, durationInFrames: 58 },
-  { file: "voiceover/docker-cta/01.mp3", from: 172, durationInFrames: 78 },
-  { file: "voiceover/docker-cta/03.mp3", from: 558, durationInFrames: 32 },
-  { file: "voiceover/docker-cta/04.mp3", from: 612, durationInFrames: 40 },
-  { file: "voiceover/docker-cta/05.mp3", from: 678, durationInFrames: 59 },
-  { file: "voiceover/docker-cta/06.mp3", from: 744, durationInFrames: 38 },
-  { file: "voiceover/docker-cta/07.mp3", from: 810, durationInFrames: 52 },
-  { file: "voiceover/docker-cta/08.mp3", from: 876, durationInFrames: 56 },
-  { file: "voiceover/docker-cta/09.mp3", from: 960, durationInFrames: 74 },
+  { file: "voiceover/docker-cta/02.mp3", from: 106, durationInFrames: 46 },
+  { file: "voiceover/docker-cta/01.mp3", from: 156, durationInFrames: 62 },
+  { file: "voiceover/docker-cta/03.mp3", from: 434, durationInFrames: 25 },
+  { file: "voiceover/docker-cta/04.mp3", from: 464, durationInFrames: 32 },
+  { file: "voiceover/docker-cta/05.mp3", from: 500, durationInFrames: 46 },
+  { file: "voiceover/docker-cta/06.mp3", from: 552, durationInFrames: 30 },
+  { file: "voiceover/docker-cta/07.mp3", from: 590, durationInFrames: 41 },
+  { file: "voiceover/docker-cta/08.mp3", from: 636, durationInFrames: 44 },
+  { file: "voiceover/docker-cta/09.mp3", from: 728, durationInFrames: 58 },
 ];
 
 // Music bed: fade in, hold at base, fade out; ducked under each VO window.
@@ -472,8 +468,8 @@ const BrandBeat: React.FC = () => {
   // DOCKER + "for beginners" synced to VO 02 (abs 106 = local ~6)
   const brand = spring({ frame: frame - 6, fps, config: PUNCH });
   const beginners = spring({ frame: frame - 16, fps, config: SETTLE });
-  // "Master Docker in 3 days" promise synced to VO 01 (abs 172 = local ~72)
-  const promise = spring({ frame: frame - 72, fps, config: PUNCH });
+  // "Master Docker in 3 days" promise synced to VO 01 (abs 156 = local ~56)
+  const promise = spring({ frame: frame - 56, fps, config: PUNCH });
   const out = interpolate(frame, [BRAND_DUR - 16, BRAND_DUR], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -610,13 +606,13 @@ const ExplainerBeat: React.FC = () => {
   const { fps } = useVideoConfig();
 
   const card = spring({
-    frame: frame - 30,
+    frame: frame - 18,
     fps,
     config: SETTLE,
   });
   const cardX = interpolate(card, [0, 1], [520, 0]);
   const whale = spring({
-    frame: frame - 90,
+    frame: frame - 50,
     fps,
     config: { damping: 12, stiffness: 200 },
   });
@@ -651,7 +647,7 @@ const ExplainerBeat: React.FC = () => {
       >
         <TypingText
           text={EXPLAIN_TITLE}
-          charFrames={CHAR_FRAMES}
+          charFrames={1}
           cursorBlinkFrames={CURSOR_BLINK}
           cursorColor={DOCKER.ice}
         />
@@ -685,18 +681,18 @@ const ExplainerBeat: React.FC = () => {
         </span>
       </div>
 
-      <DownArrow localFrom={82} />
+      <DownArrow localFrom={44} />
 
       {/* docker whale */}
       <DockerMark enter={whale} size={190} />
 
-      <DownArrow localFrom={147} />
+      <DownArrow localFrom={84} />
 
       {/* destinations */}
       <div style={{ display: "flex", gap: 26 }}>
-        <DestChip localFrom={155} icon={mdiLaptop} label="laptop" />
-        <DestChip localFrom={175} icon={mdiServer} label="server" />
-        <DestChip localFrom={195} icon={mdiCloud} label="cloud" />
+        <DestChip localFrom={92} icon={mdiLaptop} label="laptop" />
+        <DestChip localFrom={102} icon={mdiServer} label="server" />
+        <DestChip localFrom={112} icon={mdiCloud} label="cloud" />
       </div>
 
       {/* tagline slot — fixed height, always present, so the centered column does
@@ -710,7 +706,7 @@ const ExplainerBeat: React.FC = () => {
           justifyContent: "center",
         }}
       >
-        <Sequence from={224} layout="none">
+        <Sequence from={130} layout="none">
           <div
             style={{
               fontFamily: MONO,
@@ -722,7 +718,7 @@ const ExplainerBeat: React.FC = () => {
           >
             <TypingText
               text={EXPLAIN_TAGLINE}
-              charFrames={CHAR_FRAMES}
+              charFrames={1}
               cursorBlinkFrames={CURSOR_BLINK}
               cursorColor={DOCKER.white}
             />
@@ -948,14 +944,17 @@ const CtaBeat: React.FC = () => {
 };
 
 const CLICK_EVERY = 2;
-const TypingClicks: React.FC<{ charCount: number }> = ({ charCount }) => {
+const TypingClicks: React.FC<{ charCount: number; charFrames?: number }> = ({
+  charCount,
+  charFrames = CHAR_FRAMES,
+}) => {
   const clicks = [];
   for (let i = 0; i < charCount; i += CLICK_EVERY) {
     clicks.push(
       <Sequence
         key={i}
-        from={i * CHAR_FRAMES}
-        durationInFrames={CLICK_EVERY * CHAR_FRAMES}
+        from={i * charFrames}
+        durationInFrames={CLICK_EVERY * charFrames}
       >
         <Audio src={staticFile(CLICK_SFX)} volume={0.5} />
       </Sequence>,
@@ -1021,30 +1020,34 @@ export const DockerCtaVideo: React.FC = () => {
         <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
       </Sequence>
 
-      {/* Explainer beat SFX — digital blip palette + typewriter clicks (no music bed) */}
+      {/* Explainer beat SFX — punchy impact/boom hits + fast typewriter clicks */}
       <Sequence from={EXPLAIN_FROM}>
-        <TypingClicks charCount={EXPLAIN_TITLE.length} />
+        <TypingClicks charCount={EXPLAIN_TITLE.length} charFrames={1} />
       </Sequence>
-      <Sequence from={EXPLAIN_FROM + 30}>
-        <Audio src={staticFile(BLIP_RISE_SFX)} volume={0.55} />
+      <Sequence from={EXPLAIN_FROM + 18}>
+        <Audio src={staticFile(IMPACT_SFX)} volume={0.5} />
       </Sequence>
-      <Sequence from={EXPLAIN_FROM + 90}>
-        <Audio src={staticFile(BLIP_LOW_SFX)} volume={0.6} />
+      <Sequence from={EXPLAIN_FROM + 50}>
+        <Audio src={staticFile(BOOM_SFX)} volume={0.55} />
       </Sequence>
-      {/* blip-steps.mp3 bakes a 0/667/1333ms stagger — keep in sync with the
-          DestChip localFrom values 155/175/195 (20-frame stagger @30fps). */}
-      <Sequence from={EXPLAIN_FROM + 155}>
-        <Audio src={staticFile(BLIP_STEPS_SFX)} volume={0.5} />
+      <Sequence from={EXPLAIN_FROM + 92}>
+        <Audio src={staticFile(IMPACT_SFX)} volume={0.45} />
       </Sequence>
-      <Sequence from={EXPLAIN_FROM + 224}>
-        <TypingClicks charCount={EXPLAIN_TAGLINE.length} />
+      <Sequence from={EXPLAIN_FROM + 102}>
+        <Audio src={staticFile(IMPACT_SFX)} volume={0.5} />
       </Sequence>
-      <Sequence from={EXPLAIN_FROM + 272}>
-        <Audio src={staticFile(CONFIRM_SFX)} volume={0.6} />
+      <Sequence from={EXPLAIN_FROM + 112}>
+        <Audio src={staticFile(IMPACT_SFX)} volume={0.55} />
+      </Sequence>
+      <Sequence from={EXPLAIN_FROM + 130}>
+        <TypingClicks charCount={EXPLAIN_TAGLINE.length} charFrames={1} />
+      </Sequence>
+      <Sequence from={EXPLAIN_FROM + 154}>
+        <Audio src={staticFile(BOOM_SFX)} volume={0.6} />
       </Sequence>
       {CARDS.map((c) => (
         <Sequence key={`sfx-${c.label}`} from={c.from} durationInFrames={8}>
-          <Audio src={staticFile(CLICK_SFX)} volume={0.7} />
+          <Audio src={staticFile(IMPACT_SFX)} volume={0.5} />
         </Sequence>
       ))}
       <Sequence from={CTA_REVEAL_FROM}>
