@@ -72,6 +72,7 @@ const CTA_REVEAL_FROM = 1095;
 const CHAR_FRAMES = 2;
 const CURSOR_BLINK = 16;
 const CORRUGATED_BG = `repeating-linear-gradient(90deg, ${DOCKER.cardFill} 0px, ${DOCKER.cardFill} 26px, #1A57B0 26px, #1A57B0 30px)`;
+const EXPLAIN_TITLE = "WHAT IS DOCKER?";
 const EXPLAIN_APP_LABEL = "your app + all its deps";
 const EXPLAIN_TAGLINE = "runs the SAME everywhere";
 
@@ -82,8 +83,10 @@ const CLICK_SFX = "content/devops1-bootcamp/sfx/click.mp3";
 const DING_SFX = "content/devops1-bootcamp/sfx/ding.mp3";
 const WHOOSH_SFX = "content/docker-cta/sfx/whoosh.mp3";
 const SWELL_SFX = "content/docker-cta/sfx/swell.mp3";
-const EXPLAIN_PAD_SFX = "content/docker-cta/sfx/explain-pad.mp3";
-const CHIME3_SFX = "content/docker-cta/sfx/chime3.mp3";
+const BLIP_RISE_SFX = "content/docker-cta/sfx/blip-rise.mp3";
+const BLIP_LOW_SFX = "content/docker-cta/sfx/blip-low.mp3";
+const BLIP_STEPS_SFX = "content/docker-cta/sfx/blip-steps.mp3";
+const CONFIRM_SFX = "content/docker-cta/sfx/confirm.mp3";
 
 const MUSIC_BASE = 0.36; // bed level in gaps
 const MUSIC_DUCK = 0.14; // bed level under VO
@@ -393,7 +396,7 @@ const ExplainerBeat: React.FC = () => {
         }}
       >
         <TypingText
-          text={"WHAT IS DOCKER?"}
+          text={EXPLAIN_TITLE}
           charFrames={CHAR_FRAMES}
           cursorBlinkFrames={CURSOR_BLINK}
           cursorColor={DOCKER.ice}
@@ -748,21 +751,26 @@ export const DockerCtaVideo: React.FC = () => {
         <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
       </Sequence>
 
-      {/* Explainer beat SFX (silent VO; SFX carries the beat) */}
+      {/* Explainer beat SFX — digital blip palette + typewriter clicks (no music bed) */}
       <Sequence from={EXPLAIN_FROM}>
-        <Audio src={staticFile(EXPLAIN_PAD_SFX)} volume={0.5} />
+        <TypingClicks charCount={EXPLAIN_TITLE.length} />
       </Sequence>
       <Sequence from={EXPLAIN_FROM + 30}>
-        <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
+        <Audio src={staticFile(BLIP_RISE_SFX)} volume={0.55} />
       </Sequence>
       <Sequence from={EXPLAIN_FROM + 90}>
-        <Audio src={staticFile(WHOOSH_SFX)} volume={0.7} />
+        <Audio src={staticFile(BLIP_LOW_SFX)} volume={0.6} />
       </Sequence>
+      {/* blip-steps.mp3 bakes a 0/667/1333ms stagger — keep in sync with the
+          DestChip localFrom values 155/175/195 (20-frame stagger @30fps). */}
       <Sequence from={EXPLAIN_FROM + 155}>
-        <Audio src={staticFile(CHIME3_SFX)} volume={0.8} />
+        <Audio src={staticFile(BLIP_STEPS_SFX)} volume={0.5} />
       </Sequence>
-      <Sequence from={EXPLAIN_FROM + 280}>
-        <Audio src={staticFile(DING_SFX)} volume={0.8} />
+      <Sequence from={EXPLAIN_FROM + 224}>
+        <TypingClicks charCount={EXPLAIN_TAGLINE.length} />
+      </Sequence>
+      <Sequence from={EXPLAIN_FROM + 272}>
+        <Audio src={staticFile(CONFIRM_SFX)} volume={0.6} />
       </Sequence>
       {CARDS.map((c) => (
         <Sequence key={`sfx-${c.label}`} from={c.from} durationInFrames={8}>

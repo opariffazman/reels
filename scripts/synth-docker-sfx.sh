@@ -1,36 +1,48 @@
 #!/usr/bin/env bash
 # Synthesize the Docker-CTA explainer SFX with ffmpeg (offline, reproducible).
-# Re-run any time to regenerate the binaries deterministically.
+# Digital "blip + rising tone" palette for the explainer breakdown (no music bed).
+# Re-run any time to regenerate the binaries deterministically. Requires ffmpeg >= 4.
 set -euo pipefail
 
 OUT="public/content/docker-cta/sfx"
 mkdir -p "$OUT"
 
-# --- explain-pad: ~3.5s low ambient riser (pink noise + 110Hz drone) ---
-ffmpeg -y \
-  -f lavfi -i "anoisesrc=color=pink:duration=3.5:amplitude=0.35:sample_rate=48000" \
-  -f lavfi -i "sine=frequency=110:duration=3.5:sample_rate=48000" \
-  -filter_complex "\
-    [0:a]highpass=f=200,lowpass=f=2500[n]; \
-    [1:a]volume=0.35[d]; \
-    [n][d]amix=inputs=2:duration=longest, \
-    afade=t=in:st=0:d=2.5, afade=t=out:st=3.0:d=0.5, \
-    aecho=0.8:0.7:60:0.3, \
-    loudnorm=I=-16:TP=-1.5:LRA=11" \
-  -ar 48000 -ac 1 "$OUT/explain-pad.mp3"
+NORM="loudnorm=I=-16:TP=-1.5:LRA=11"
 
-# --- chime3: ascending ding C5/E5/G5, staggered 200ms apart ---
+# --- blip-rise: package reveal — digital blip sweeping up 500->940Hz (chirp) ---
 ffmpeg -y \
-  -f lavfi -i "sine=frequency=523:duration=1.0:sample_rate=48000" \
-  -f lavfi -i "sine=frequency=659:duration=0.9:sample_rate=48000" \
-  -f lavfi -i "sine=frequency=784:duration=0.9:sample_rate=48000" \
+  -f lavfi -i "aevalsrc='0.6*sin(2*PI*(500*t+1000*t*t))':d=0.22:s=48000" \
+  -af "afade=t=out:st=0.05:d=0.17, $NORM" \
+  -ar 48000 -ac 1 "$OUT/blip-rise.mp3"
+
+# --- blip-low: whale reveal — bigger/lower blip sweeping up 280->550Hz (chirp) ---
+ffmpeg -y \
+  -f lavfi -i "aevalsrc='0.6*sin(2*PI*(280*t+480*t*t))':d=0.28:s=48000" \
+  -af "afade=t=out:st=0.06:d=0.22, $NORM" \
+  -ar 48000 -ac 1 "$OUT/blip-low.mp3"
+
+# --- blip-steps: three ascending dest blips (700/880/1050Hz) at 0 / 0.667 / 1.333s ---
+# (matches laptop/server/cloud chips at local frames 155/175/195 @30fps) ---
+ffmpeg -y \
+  -f lavfi -i "sine=frequency=700:duration=0.1:sample_rate=48000" \
+  -f lavfi -i "sine=frequency=880:duration=0.1:sample_rate=48000" \
+  -f lavfi -i "sine=frequency=1050:duration=0.1:sample_rate=48000" \
   -filter_complex "\
-    [0:a]afade=t=out:st=0.1:d=0.6,adelay=0[a]; \
-    [1:a]afade=t=out:st=0.1:d=0.6,adelay=200[b]; \
-    [2:a]afade=t=out:st=0.1:d=0.7,adelay=400[c]; \
-    [a][b][c]amix=inputs=3:duration=longest, \
-    loudnorm=I=-16:TP=-1.5:LRA=11" \
-  -ar 48000 -ac 1 "$OUT/chime3.mp3"
+    [0:a]afade=t=out:st=0.02:d=0.08,adelay=0[a]; \
+    [1:a]afade=t=out:st=0.02:d=0.08,adelay=667[b]; \
+    [2:a]afade=t=out:st=0.02:d=0.08,adelay=1333[c]; \
+    [a][b][c]amix=inputs=3:duration=longest, $NORM" \
+  -ar 48000 -ac 1 "$OUT/blip-steps.mp3"
+
+# --- confirm: tagline payoff — two-note up confirm (660 -> 990Hz) ---
+ffmpeg -y \
+  -f lavfi -i "sine=frequency=660:duration=0.14:sample_rate=48000" \
+  -f lavfi -i "sine=frequency=990:duration=0.22:sample_rate=48000" \
+  -filter_complex "\
+    [0:a]afade=t=out:st=0.04:d=0.10,adelay=0[a]; \
+    [1:a]afade=t=out:st=0.06:d=0.16,adelay=110[b]; \
+    [a][b]amix=inputs=2:duration=longest,aecho=0.8:0.6:40:0.25, $NORM" \
+  -ar 48000 -ac 1 "$OUT/confirm.mp3"
 
 echo "wrote:"
-ls -la "$OUT/explain-pad.mp3" "$OUT/chime3.mp3"
+ls -la "$OUT/blip-rise.mp3" "$OUT/blip-low.mp3" "$OUT/blip-steps.mp3" "$OUT/confirm.mp3"
