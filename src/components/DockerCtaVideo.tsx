@@ -329,21 +329,79 @@ const DockerMark: React.FC<{ enter: number; size?: number }> = ({
   );
 };
 
-// ---- Beat 2: brand reveal ----
-const BrandBeat: React.FC = () => {
-  const frame = useCurrentFrame();
+// ---- Whale that swims in and bobs ----
+const Whale: React.FC = () => {
+  const frame = useCurrentFrame(); // local to brand
   const { fps } = useVideoConfig();
-  const enter = spring({ frame, fps, config: { damping: 13, stiffness: 200 } });
-  const wordmark = spring({
-    frame: frame - 10,
-    fps,
-    config: { damping: 20, stiffness: 200 },
-  });
-  const caption = spring({
-    frame: frame - 22,
-    fps,
-    config: { damping: 20, stiffness: 200 },
-  });
+  const swim = spring({ frame, fps, config: { damping: 14, stiffness: 110 } });
+  const x = interpolate(swim, [0, 1], [-540, 0]);
+  const bob = Math.sin(frame * 0.13) * 12;
+  return (
+    <div style={{ transform: `translate(${x}px, ${bob}px)` }}>
+      <DockerMark enter={swim} size={230} />
+    </div>
+  );
+};
+
+// ---- Water ripple rings + rising bubbles beneath the whale ----
+const WaterFX: React.FC = () => {
+  const frame = useCurrentFrame();
+  return (
+    <div style={{ position: "relative", width: 300, height: 70 }}>
+      {[0, 25, 50].map((off, i) => {
+        const t = (((frame - off) % 75) + 75) % 75;
+        const p = t / 75;
+        return (
+          <div
+            key={`r${i}`}
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: 24,
+              width: 200,
+              height: 40,
+              marginLeft: -100,
+              borderRadius: "50%",
+              border: `2px solid ${DOCKER.ice}`,
+              opacity: (1 - p) * 0.22,
+              transform: `scale(${0.4 + p * 1.3})`,
+            }}
+          />
+        );
+      })}
+      {[0, 1, 2, 3, 4].map((i) => {
+        const t = (((frame + i * 13) % 60) + 60) % 60;
+        const p = t / 60;
+        return (
+          <div
+            key={`b${i}`}
+            style={{
+              position: "absolute",
+              left: 60 + i * 45,
+              top: 24,
+              width: 8 + (i % 3) * 3,
+              height: 8 + (i % 3) * 3,
+              borderRadius: "50%",
+              background: DOCKER.ice,
+              opacity: Math.sin(p * Math.PI) * 0.3,
+              transform: `translateY(${interpolate(p, [0, 1], [10, -48])}px)`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+// ---- Beat 2: brand reveal with whale hero moment ----
+const BrandBeat: React.FC = () => {
+  const frame = useCurrentFrame(); // local to BRAND_FROM
+  const { fps } = useVideoConfig();
+  // DOCKER + "for beginners" synced to VO 02 (abs 106 = local ~6)
+  const brand = spring({ frame: frame - 6, fps, config: PUNCH });
+  const beginners = spring({ frame: frame - 16, fps, config: SETTLE });
+  // "Master Docker in 3 days" promise synced to VO 01 (abs 172 = local ~72)
+  const promise = spring({ frame: frame - 72, fps, config: PUNCH });
   const out = interpolate(frame, [BRAND_DUR - 16, BRAND_DUR], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -354,28 +412,31 @@ const BrandBeat: React.FC = () => {
         justifyContent: "center",
         alignItems: "center",
         flexDirection: "column",
-        gap: 24,
+        gap: 14,
         opacity: out,
+        padding: 70,
       }}
     >
-      <DockerMark enter={enter} />
+      <Whale />
+      <WaterFX />
       <div
         style={{
-          opacity: wordmark,
-          transform: `translateY(${interpolate(wordmark, [0, 1], [24, 0])}px)`,
+          opacity: brand,
+          transform: `scale(${interpolate(brand, [0, 1], [0.7, 1])})`,
           fontFamily: INTER,
           fontWeight: 800,
           fontSize: 120,
           letterSpacing: 2,
           color: DOCKER.white,
+          marginTop: 6,
         }}
       >
         DOCKER
       </div>
       <div
         style={{
-          opacity: caption,
-          transform: `translateY(${interpolate(caption, [0, 1], [16, 0])}px)`,
+          opacity: beginners,
+          transform: `translateY(${interpolate(beginners, [0, 1], [16, 0])}px)`,
           fontFamily: INTER,
           fontWeight: 600,
           fontSize: 46,
@@ -383,6 +444,19 @@ const BrandBeat: React.FC = () => {
         }}
       >
         for beginners
+      </div>
+      <div
+        style={{
+          opacity: promise,
+          transform: `translateY(${interpolate(promise, [0, 1], [20, 0])}px)`,
+          fontFamily: INTER,
+          fontWeight: 700,
+          fontSize: 40,
+          color: DOCKER.white,
+          marginTop: 14,
+        }}
+      >
+        Master Docker in 3 days
       </div>
     </AbsoluteFill>
   );
