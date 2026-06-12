@@ -15,12 +15,17 @@ import {
   mdiMapMarker,
   mdiWhatsapp,
   mdiArrowRight,
+  mdiPackageVariant,
+  mdiLaptop,
+  mdiServer,
+  mdiCloud,
+  mdiArrowDown,
 } from "@mdi/js";
 import { INTER, MONO } from "../fonts";
 import { MdiIcon } from "./MdiIcon";
 import { TypingText } from "./TypingText";
 
-export const DOCKERCTA_TOTAL_FRAMES = 900;
+export const DOCKERCTA_TOTAL_FRAMES = 1200;
 
 // ---- Docker-brand theme tokens ----
 const DOCKER = {
@@ -41,26 +46,34 @@ const HOOK_FROM = 0;
 const HOOK_DUR = 135;
 const BRAND_FROM = 135;
 const BRAND_DUR = 120;
-const CURR_FROM = 255;
+
+// Explainer beat ("what is Docker"); everything below shifts +300 vs the 30s cut.
+const EXPLAIN_FROM = 255;
+const EXPLAIN_DUR = 300;
+
+const CURR_FROM = 555;
 const CURR_DUR = 405;
-const CTA_FROM = 660;
+const CTA_FROM = 960;
 const CTA_DUR = 240;
 
-const HEADER_FROM = 255;
+const HEADER_FROM = 555;
 const CARDS: { label: string; from: number }[] = [
-  { label: "Docker Basics", from: 309 },
-  { label: "Images & Containers", from: 375 },
-  { label: "Docker Compose", from: 441 },
-  { label: "Troubleshoot & Secure", from: 507 },
-  { label: "Backup & Restore", from: 573 },
+  { label: "Docker Basics", from: 609 },
+  { label: "Images & Containers", from: 675 },
+  { label: "Docker Compose", from: 741 },
+  { label: "Troubleshoot & Secure", from: 807 },
+  { label: "Backup & Restore", from: 873 },
 ];
 
-const DATE_FROM = 660;
-const VENUE_FROM = 735;
-const CTA_REVEAL_FROM = 795;
+const DATE_FROM = 960;
+const VENUE_FROM = 1035;
+const CTA_REVEAL_FROM = 1095;
 
 const CHAR_FRAMES = 2;
 const CURSOR_BLINK = 16;
+const CORRUGATED_BG = `repeating-linear-gradient(90deg, ${DOCKER.cardFill} 0px, ${DOCKER.cardFill} 26px, #1A57B0 26px, #1A57B0 30px)`;
+const EXPLAIN_APP_LABEL = "your app + all its deps";
+const EXPLAIN_TAGLINE = "runs the SAME everywhere";
 
 // ---- Audio ----
 const MUSIC = "content/docker-cta/bg-music.mp3";
@@ -77,13 +90,13 @@ const DUCK_RAMP = 8;
 const VOICEOVER: { file: string; from: number; durationInFrames: number }[] = [
   { file: "voiceover/docker-cta/01.mp3", from: 8, durationInFrames: 78 },
   { file: "voiceover/docker-cta/02.mp3", from: 150, durationInFrames: 58 },
-  { file: "voiceover/docker-cta/03.mp3", from: 258, durationInFrames: 32 },
-  { file: "voiceover/docker-cta/04.mp3", from: 312, durationInFrames: 40 },
-  { file: "voiceover/docker-cta/05.mp3", from: 378, durationInFrames: 59 },
-  { file: "voiceover/docker-cta/06.mp3", from: 444, durationInFrames: 38 },
-  { file: "voiceover/docker-cta/07.mp3", from: 510, durationInFrames: 52 },
-  { file: "voiceover/docker-cta/08.mp3", from: 576, durationInFrames: 56 },
-  { file: "voiceover/docker-cta/09.mp3", from: 660, durationInFrames: 74 },
+  { file: "voiceover/docker-cta/03.mp3", from: 558, durationInFrames: 32 },
+  { file: "voiceover/docker-cta/04.mp3", from: 612, durationInFrames: 40 },
+  { file: "voiceover/docker-cta/05.mp3", from: 678, durationInFrames: 59 },
+  { file: "voiceover/docker-cta/06.mp3", from: 744, durationInFrames: 38 },
+  { file: "voiceover/docker-cta/07.mp3", from: 810, durationInFrames: 52 },
+  { file: "voiceover/docker-cta/08.mp3", from: 876, durationInFrames: 56 },
+  { file: "voiceover/docker-cta/09.mp3", from: 960, durationInFrames: 74 },
 ];
 
 // Music bed: fade in, hold at base, fade out; ducked under each VO window.
@@ -172,11 +185,15 @@ const HookBeat: React.FC = () => {
 };
 
 // ---- Docker logo mark ----
-const DockerMark: React.FC<{ enter: number }> = ({ enter }) => {
+const DockerMark: React.FC<{ enter: number; size?: number }> = ({
+  enter,
+  size = 300,
+}) => {
   return (
     <div
       style={{
         position: "relative",
+        opacity: enter,
         transform: `scale(${enter})`,
         display: "flex",
         justifyContent: "center",
@@ -186,14 +203,14 @@ const DockerMark: React.FC<{ enter: number }> = ({ enter }) => {
       <div
         style={{
           position: "absolute",
-          width: 360,
-          height: 360,
+          width: size * 1.2,
+          height: size * 1.2,
           borderRadius: "50%",
           background: `radial-gradient(circle, ${DOCKER.ice} 0%, transparent 65%)`,
           opacity: 0.35,
         }}
       />
-      <MdiIcon path={mdiDocker} size={300} color={DOCKER.white} />
+      <MdiIcon path={mdiDocker} size={size} color={DOCKER.white} />
     </div>
   );
 };
@@ -257,6 +274,205 @@ const BrandBeat: React.FC = () => {
   );
 };
 
+// ---- Explainer: down-arrow connector ----
+const DownArrow: React.FC<{ localFrom: number }> = ({ localFrom }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const p = spring({
+    frame: frame - localFrom,
+    fps,
+    config: { damping: 18, stiffness: 200 },
+  });
+  return (
+    <div
+      style={{
+        opacity: p,
+        transform: `translateY(${interpolate(p, [0, 1], [-12, 0])}px)`,
+      }}
+    >
+      <MdiIcon path={mdiArrowDown} size={56} color={DOCKER.ice} />
+    </div>
+  );
+};
+
+// ---- Explainer: a destination chip (laptop / server / cloud) ----
+const DestChip: React.FC<{
+  localFrom: number;
+  icon: string;
+  label: string;
+}> = ({ localFrom, icon, label }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const p = spring({
+    frame: frame - localFrom,
+    fps,
+    config: { damping: 14, stiffness: 200 },
+  });
+  return (
+    <div
+      style={{
+        opacity: p,
+        transform: `translateY(${interpolate(p, [0, 1], [30, 0])}px) scale(${interpolate(
+          p,
+          [0, 1],
+          [0.8, 1],
+        )})`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 12,
+        padding: "24px 26px",
+        borderRadius: 20,
+        background: DOCKER.cardFill,
+        border: `2px solid ${DOCKER.cardEdge}`,
+        boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
+        minWidth: 188,
+      }}
+    >
+      <MdiIcon path={icon} size={84} color={DOCKER.ice} />
+      <span
+        style={{
+          fontFamily: INTER,
+          fontWeight: 700,
+          fontSize: 38,
+          color: DOCKER.white,
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+};
+
+// ---- Explainer beat: "build once, run anywhere" ----
+const ExplainerBeat: React.FC = () => {
+  const frame = useCurrentFrame(); // relative to EXPLAIN_FROM
+  const { fps } = useVideoConfig();
+
+  const card = spring({
+    frame: frame - 30,
+    fps,
+    config: { damping: 16, stiffness: 180 },
+  });
+  const cardX = interpolate(card, [0, 1], [520, 0]);
+  const whale = spring({
+    frame: frame - 90,
+    fps,
+    config: { damping: 12, stiffness: 200 },
+  });
+  const out = interpolate(frame, [EXPLAIN_DUR - 16, EXPLAIN_DUR], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill
+      style={{
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column",
+        gap: 18,
+        opacity: out,
+        padding: 70,
+      }}
+    >
+      {/* title — types in from local frame 0 */}
+      <div
+        style={{
+          fontFamily: MONO,
+          fontWeight: 700,
+          fontSize: 62,
+          letterSpacing: -1,
+          color: DOCKER.white,
+          textAlign: "center",
+          marginBottom: 10,
+          textShadow: "0 4px 20px rgba(0,0,0,0.4)",
+        }}
+      >
+        <TypingText
+          text={"WHAT IS DOCKER?"}
+          charFrames={CHAR_FRAMES}
+          cursorBlinkFrames={CURSOR_BLINK}
+          cursorColor={DOCKER.ice}
+        />
+      </div>
+
+      {/* app package card */}
+      <div
+        style={{
+          opacity: card,
+          transform: `translateX(${cardX}px)`,
+          display: "flex",
+          alignItems: "center",
+          gap: 24,
+          padding: "26px 34px",
+          borderRadius: 22,
+          backgroundImage: CORRUGATED_BG,
+          border: `2px solid ${DOCKER.cardEdge}`,
+          boxShadow: "0 18px 46px rgba(0,0,0,0.4)",
+        }}
+      >
+        <MdiIcon path={mdiPackageVariant} size={64} color={DOCKER.ice} />
+        <span
+          style={{
+            fontFamily: INTER,
+            fontWeight: 700,
+            fontSize: 44,
+            color: DOCKER.white,
+          }}
+        >
+          {EXPLAIN_APP_LABEL}
+        </span>
+      </div>
+
+      <DownArrow localFrom={82} />
+
+      {/* docker whale */}
+      <DockerMark enter={whale} size={190} />
+
+      <DownArrow localFrom={147} />
+
+      {/* destinations */}
+      <div style={{ display: "flex", gap: 26 }}>
+        <DestChip localFrom={155} icon={mdiLaptop} label="laptop" />
+        <DestChip localFrom={175} icon={mdiServer} label="server" />
+        <DestChip localFrom={195} icon={mdiCloud} label="cloud" />
+      </div>
+
+      {/* tagline slot — fixed height, always present, so the centered column does
+          not reflow/jump when the tagline mounts at local frame 240 */}
+      <div
+        style={{
+          minHeight: 72,
+          marginTop: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Sequence from={224} layout="none">
+          <div
+            style={{
+              fontFamily: MONO,
+              fontWeight: 700,
+              fontSize: 44,
+              color: DOCKER.ice,
+              textAlign: "center",
+            }}
+          >
+            <TypingText
+              text={EXPLAIN_TAGLINE}
+              charFrames={CHAR_FRAMES}
+              cursorBlinkFrames={CURSOR_BLINK}
+              cursorColor={DOCKER.white}
+            />
+          </div>
+        </Sequence>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 // ---- A single corrugated container card ----
 const ContainerCard: React.FC<{ label: string; localFrame: number }> = ({
   label,
@@ -280,7 +496,7 @@ const ContainerCard: React.FC<{ label: string; localFrame: number }> = ({
         width: 860,
         padding: "30px 38px",
         borderRadius: 22,
-        backgroundImage: `repeating-linear-gradient(90deg, ${DOCKER.cardFill} 0px, ${DOCKER.cardFill} 26px, #1A57B0 26px, #1A57B0 30px)`,
+        backgroundImage: CORRUGATED_BG,
         border: `2px solid ${DOCKER.cardEdge}`,
         boxShadow: "0 18px 46px rgba(0,0,0,0.4)",
       }}
@@ -500,6 +716,9 @@ export const DockerCtaVideo: React.FC = () => {
       </Sequence>
       <Sequence from={BRAND_FROM} durationInFrames={BRAND_DUR}>
         <BrandBeat />
+      </Sequence>
+      <Sequence from={EXPLAIN_FROM} durationInFrames={EXPLAIN_DUR}>
+        <ExplainerBeat />
       </Sequence>
       <Sequence from={CURR_FROM} durationInFrames={CURR_DUR}>
         <CurriculumBeat />
