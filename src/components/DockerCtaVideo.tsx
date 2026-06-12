@@ -43,9 +43,9 @@ const DOCKER = {
 
 // ---- Beat timing (frames @ 30fps) ----
 const HOOK_FROM = 0;
-const HOOK_DUR = 135;
-const BRAND_FROM = 135;
-const BRAND_DUR = 120;
+const HOOK_DUR = 100;
+const BRAND_FROM = 100;
+const BRAND_DUR = 155;
 
 // Explainer beat ("what is Docker"); everything below shifts +300 vs the 30s cut.
 const EXPLAIN_FROM = 255;
@@ -94,8 +94,8 @@ const DUCK_RAMP = 8;
 
 // VO clips 01–09 on the absolute timeline (durationInFrames = measured).
 const VOICEOVER: { file: string; from: number; durationInFrames: number }[] = [
-  { file: "voiceover/docker-cta/01.mp3", from: 8, durationInFrames: 78 },
-  { file: "voiceover/docker-cta/02.mp3", from: 150, durationInFrames: 58 },
+  { file: "voiceover/docker-cta/02.mp3", from: 106, durationInFrames: 58 },
+  { file: "voiceover/docker-cta/01.mp3", from: 172, durationInFrames: 78 },
   { file: "voiceover/docker-cta/03.mp3", from: 558, durationInFrames: 32 },
   { file: "voiceover/docker-cta/04.mp3", from: 612, durationInFrames: 40 },
   { file: "voiceover/docker-cta/05.mp3", from: 678, durationInFrames: 59 },
