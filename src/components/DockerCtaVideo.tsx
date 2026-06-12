@@ -177,6 +177,77 @@ const Flash: React.FC<{ hits: number[]; peak?: number }> = ({
   );
 };
 
+// Slow camera push-in across a beat (scale 1 -> 1.05 over `dur`).
+const PushIn: React.FC<{ dur: number; children: React.ReactNode }> = ({
+  dur,
+  children,
+}) => {
+  const frame = useCurrentFrame();
+  const s = interpolate(frame, [0, dur], [1, 1.05], {
+    extrapolateRight: "clamp",
+  });
+  return <AbsoluteFill style={{ transform: `scale(${s})` }}>{children}</AbsoluteFill>;
+};
+
+// One-shot specular highlight sweeping across a card. Driven by an explicit
+// localFrame prop (NOT useCurrentFrame) so it tracks the card's own timeline.
+const LightSweep: React.FC<{
+  localFrame: number;
+  from: number;
+  dur: number;
+  width: number;
+}> = ({ localFrame, from, dur, width }) => {
+  const t = localFrame - from;
+  if (t < 0 || t > dur) return null;
+  const x = interpolate(t, [0, dur], [-width * 0.5, width * 1.1]);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        width: 120,
+        transform: `translateX(${x}px) skewX(-18deg)`,
+        background:
+          "linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent)",
+        pointerEvents: "none",
+      }}
+    />
+  );
+};
+
+// Faint container silhouettes drifting in the background for depth/parallax.
+const FloatingContainers: React.FC = () => {
+  const frame = useCurrentFrame();
+  const boxes = [
+    { x: 110, y: 320, w: 190, s: 0.015, drift: 40 },
+    { x: 760, y: 720, w: 150, s: 0.012, drift: 30 },
+    { x: 190, y: 1320, w: 230, s: 0.01, drift: 50 },
+    { x: 820, y: 1520, w: 160, s: 0.017, drift: 34 },
+  ];
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
+      {boxes.map((b, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: b.x,
+            top: b.y + Math.sin(frame * b.s) * b.drift,
+            width: b.w,
+            height: b.w * 0.7,
+            borderRadius: 16,
+            border: "2px solid rgba(205,232,255,0.10)",
+            background: "rgba(205,232,255,0.04)",
+            transform: `rotate(${Math.sin(frame * b.s + i) * 4}deg)`,
+          }}
+        />
+      ))}
+    </AbsoluteFill>
+  );
+};
+
 // ---- Animated gradient background ----
 const Background: React.FC = () => {
   const frame = useCurrentFrame();
@@ -188,6 +259,7 @@ const Background: React.FC = () => {
         background: `linear-gradient(${155 + drift}deg, ${DOCKER.blue} 0%, ${DOCKER.blueDeep} 42%, ${DOCKER.navy} 100%)`,
       }}
     >
+      <FloatingContainers />
       <AbsoluteFill
         style={{
           background: `radial-gradient(circle at 50% 38%, rgba(205,232,255,${glow}) 0%, transparent 55%)`,
@@ -667,17 +739,18 @@ const ContainerCard: React.FC<{ label: string; localFrame: number }> = ({
   localFrame,
 }) => {
   const { fps } = useVideoConfig();
-  const enter = spring({
-    frame: localFrame,
-    fps,
-    config: { damping: 16, stiffness: 180 },
-  });
-  const x = interpolate(enter, [0, 1], [520, 0]);
+  const enter = spring({ frame: localFrame, fps, config: PUNCH });
+  // Clamp the slide so the PUNCH overshoot (enter > 1) bounces in scale/opacity,
+  // not position — otherwise the card punches ~90px off the left edge.
+  const x = interpolate(enter, [0, 1], [520, 0], { extrapolateRight: "clamp" });
+  const scale = interpolate(enter, [0, 1], [0.92, 1]);
   return (
     <div
       style={{
-        opacity: enter,
-        transform: `translateX(${x}px)`,
+        position: "relative",
+        overflow: "hidden",
+        opacity: Math.min(1, enter),
+        transform: `translateX(${x}px) scale(${scale})`,
         display: "flex",
         alignItems: "center",
         gap: 28,
@@ -701,6 +774,7 @@ const ContainerCard: React.FC<{ label: string; localFrame: number }> = ({
       >
         {label}
       </span>
+      <LightSweep localFrame={localFrame} from={12} dur={20} width={860} />
     </div>
   );
 };
@@ -761,11 +835,7 @@ const Line: React.FC<{
 }> = ({ localFrom, icon, children }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const p = spring({
-    frame: frame - localFrom,
-    fps,
-    config: { damping: 18, stiffness: 200 },
-  });
+  const p = spring({ frame: frame - localFrom, fps, config: PUNCH });
   return (
     <div
       style={{
@@ -792,7 +862,7 @@ const CtaBeat: React.FC = () => {
   const cta = spring({
     frame: frame - (CTA_REVEAL_FROM - CTA_FROM),
     fps,
-    config: { damping: 12, stiffness: 200 },
+    config: PUNCH,
   });
   const pulse = 1 + Math.sin(frame * 0.18) * 0.02;
   return (
@@ -903,16 +973,24 @@ export const DockerCtaVideo: React.FC = () => {
         <HookBeat />
       </Sequence>
       <Sequence from={BRAND_FROM} durationInFrames={BRAND_DUR}>
-        <BrandBeat />
+        <PushIn dur={BRAND_DUR}>
+          <BrandBeat />
+        </PushIn>
       </Sequence>
       <Sequence from={EXPLAIN_FROM} durationInFrames={EXPLAIN_DUR}>
-        <ExplainerBeat />
+        <PushIn dur={EXPLAIN_DUR}>
+          <ExplainerBeat />
+        </PushIn>
       </Sequence>
       <Sequence from={CURR_FROM} durationInFrames={CURR_DUR}>
-        <CurriculumBeat />
+        <PushIn dur={CURR_DUR}>
+          <CurriculumBeat />
+        </PushIn>
       </Sequence>
       <Sequence from={CTA_FROM} durationInFrames={CTA_DUR}>
-        <CtaBeat />
+        <PushIn dur={CTA_DUR}>
+          <CtaBeat />
+        </PushIn>
       </Sequence>
 
       {/* Voiceover (clips 01–09; venue + CTA close are silent by design) */}
@@ -975,8 +1053,11 @@ export const DockerCtaVideo: React.FC = () => {
       <Sequence from={CTA_REVEAL_FROM + 6}>
         <Audio src={staticFile(DING_SFX)} volume={0.9} />
       </Sequence>
-      {/* Soft white flashes on the big hits (reads absolute frame at root) */}
-      <Flash hits={[0, HOOK_FROM + HOOK_DOYOU]} />
+      {/* Soft white flashes: hook hits + each beat boundary (whip cuts) */}
+      <Flash
+        hits={[0, HOOK_FROM + HOOK_DOYOU, BRAND_FROM, EXPLAIN_FROM, CURR_FROM, CTA_FROM]}
+        peak={0.4}
+      />
     </AbsoluteFill>
   );
 };
