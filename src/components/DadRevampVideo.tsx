@@ -34,12 +34,12 @@ type Beat = {
   label: "OLD" | "NEW";
 };
 const BEATS: Beat[] = [
-  { src: "old", from: 1.0, to: 7.0, label: "OLD" }, // 1 hero (before)
-  { src: "new", from: 1.0, to: 7.5, label: "NEW" }, // 2 hero (after)
-  { src: "old", from: 36.0, to: 42.0, label: "OLD" }, // 3 projects (before)
-  { src: "new", from: 9.0, to: 15.0, label: "NEW" }, // 4 products (after)
-  { src: "old", from: 30.0, to: 35.5, label: "OLD" }, // 5 footer (before)
-  { src: "new", from: 40.0, to: 47.0, label: "NEW" }, // 6 product page (after)
+  { src: "old", from: 3.5, to: 9.5, label: "OLD" }, // 1 dark generic hero + cards
+  { src: "new", from: 0.5, to: 7.0, label: "NEW" }, // 2 light "We got your back" hero
+  { src: "old", from: 32.5, to: 38.5, label: "OLD" }, // 3 dark AWS project diagrams
+  { src: "new", from: 4.0, to: 10.5, label: "NEW" }, // 4 colorful EdTech product cards
+  { src: "old", from: 9.5, to: 14.5, label: "OLD" }, // 5 dark lower + "Let's chat" CTA
+  { src: "new", from: 40.5, to: 47.5, label: "NEW" }, // 6 Simple E-Commerce product page
 ];
 const BEAT_FRAMES = BEATS.map((b) => sec(b.to) - sec(b.from));
 
@@ -98,32 +98,39 @@ const musicVolume = (f: number): number => {
   return envelope * Math.min(1, duck);
 };
 
-// --- OLD/NEW pill, floating just above the phone -----------------------------
-const PillLabel: React.FC<{ label: "OLD" | "NEW" }> = ({ label }) => {
+// --- OLD/NEW pill — floated just above the phone. Rendered on the absolute
+// timeline (one per beat) rather than inside a beat, so exactly one correct
+// label shows and it swaps cleanly at each cut instead of overlapping during
+// the transition. ------------------------------------------------------------
+const PillOverlay: React.FC<{ label: "OLD" | "NEW" }> = ({ label }) => {
   const isNew = label === "NEW";
   return (
-    <div
+    <AbsoluteFill
       style={{
-        position: "absolute",
-        top: -76,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 20,
-        padding: "10px 30px",
-        borderRadius: 999,
-        fontFamily: INTER,
-        fontWeight: 800,
-        fontSize: 34,
-        letterSpacing: 3,
-        color: isNew ? "#06231a" : "#2a0e0e",
-        background: isNew ? COLORS.accent : "#ef4444",
-        boxShadow: `0 8px 30px ${
-          isNew ? "rgba(34,197,94,0.5)" : "rgba(239,68,68,0.45)"
-        }`,
+        alignItems: "center",
+        justifyContent: "flex-start",
+        paddingTop: 138,
+        pointerEvents: "none",
       }}
     >
-      {label}
-    </div>
+      <div
+        style={{
+          padding: "10px 30px",
+          borderRadius: 999,
+          fontFamily: INTER,
+          fontWeight: 800,
+          fontSize: 34,
+          letterSpacing: 3,
+          color: isNew ? "#06231a" : "#2a0e0e",
+          background: isNew ? COLORS.accent : "#ef4444",
+          boxShadow: `0 8px 30px ${
+            isNew ? "rgba(34,197,94,0.5)" : "rgba(239,68,68,0.45)"
+          }`,
+        }}
+      >
+        {label}
+      </div>
+    </AbsoluteFill>
   );
 };
 
@@ -139,25 +146,22 @@ const BeatView: React.FC<{ beat: Beat }> = ({ beat }) => {
           "radial-gradient(120% 120% at 50% 0%, #1b2a4a 0%, #0b1020 55%, #05070f 100%)",
       }}
     >
-      <div style={{ position: "relative" }}>
-        <PillLabel label={beat.label} />
-        <PhoneMockup height={PHONE_HEIGHT}>
-          <AbsoluteFill>
-            <Video
-              src={staticFile(src)}
-              trimBefore={sec(beat.from)}
-              trimAfter={sec(beat.to)}
-              muted
-              objectFit="cover"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectPosition: "center",
-              }}
-            />
-          </AbsoluteFill>
-        </PhoneMockup>
-      </div>
+      <PhoneMockup height={PHONE_HEIGHT}>
+        <AbsoluteFill>
+          <Video
+            src={staticFile(src)}
+            trimBefore={sec(beat.from)}
+            trimAfter={sec(beat.to)}
+            muted
+            objectFit="cover"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectPosition: "center",
+            }}
+          />
+        </AbsoluteFill>
+      </PhoneMockup>
     </AbsoluteFill>
   );
 };
@@ -253,6 +257,17 @@ export const DadRevampVideo: React.FC = () => {
           return [seq, transition];
         })}
       </TransitionSeries>
+
+      {/* OLD/NEW pill on the absolute timeline — one per beat, swaps at each cut */}
+      {BEATS.map((beat, i) => {
+        const from = BEAT_START[i];
+        const to = i < BEATS.length - 1 ? BEAT_START[i + 1] : END_STAMP_FROM;
+        return (
+          <Sequence key={`pill-${i}`} from={from} durationInFrames={to - from}>
+            <PillOverlay label={beat.label} />
+          </Sequence>
+        );
+      })}
 
       {/* Glitch SFX on each build sweep */}
       {SWEEP_SFX_FRAMES.map((f, i) => (
