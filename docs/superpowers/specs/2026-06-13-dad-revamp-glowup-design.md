@@ -63,15 +63,24 @@ scroll positions — fine for the glow-up read.
 
 ### End stamp
 
-Beat 6 holds ~2s, then a small centered stamp: **"Rebuilt by Claude Fable"** +
-DAD mark. Music fades out. No CTA/link card.
+Beat 6 holds ~3s (room for the VO to breathe), then a small centered stamp: **"Rebuilt by Claude Fable"** +
+DAD mark, accompanied by a single voiceover line (see Audio). Music ducks
+under the VO, then fades out. No CTA/link card.
 
 ## Audio
 
-Music bed only — reuse `public/content/devops1-bootcamp/bg-music-clawdlens-v2.mp3`.
-Volume envelope: fade in (~0.5s), steady ~0.4, fade out under the end stamp.
-No ducking (no voiceover). No SFX (optional whoosh on wipes — skip unless it
-feels flat).
+Music bed — reuse `public/content/devops1-bootcamp/bg-music-clawdlens-v2.mp3`.
+Envelope: fade in (~0.5s), steady ~0.4, duck to ~0.13 under the end-stamp VO,
+fade out at the tail. Same `musicVolume`/ducking pattern as `ClawdLensV2Video`.
+
+One voiceover line, only on the end stamp (beats 1–6 stay music-only):
+- Text: **"Rebuilt by Claude Fable."** (tunable; English to match the on-screen
+  stamp + the clawdlens-v2 robotic-narrator lines).
+- Robotic-narrator register, same TTS pipeline as the series (ElevenLabs,
+  `ELEVENLABS_API_KEY`). Saved to `public/voiceover/dad-revamp/end.mp3`.
+- Timed to start as the stamp appears; music ducks under it.
+
+No SFX (optional whoosh on wipes — skip unless it feels flat).
 
 ## Implementation notes
 
@@ -98,6 +107,6 @@ Reuse map: `PhoneMockup`, `COLORS`, `INTER`, `@remotion/media`,
 
 ## Out of scope
 
-- No voiceover, no captions/subtitles, no CTA/link card.
+- No voiceover except the single end-stamp line; no captions/subtitles, no CTA/link card.
 - No re-encoding of source footage (trim in-code).
 - No new dependencies.
