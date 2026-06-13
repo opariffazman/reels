@@ -99,8 +99,10 @@ fade out at the tail. Same `musicVolume`/ducking pattern as `ClawdLensV2Video`.
 One voiceover line, only on the end stamp (beats 1–6 stay music-only):
 - Text: **"Rebuilt by Claude Fable."** (tunable; English to match the on-screen
   stamp + the clawdlens-v2 robotic-narrator lines).
-- Robotic-narrator register, same TTS pipeline as the series (ElevenLabs,
-  `ELEVENLABS_API_KEY`). Saved to `public/voiceover/dad-revamp/end.mp3`.
+- Robotic-narrator register via **Piper** offline TTS — same route the
+  clawdlens series uses (`ClawdLensVideo`/`ClawdLensV2Video` note "Piper TTS").
+  Voice `en_US-ryan-high` (the original model name wasn't recoverable from the
+  repo). Generated → `public/voiceover/dad-revamp/end.mp3` (~1.56s).
 - Timed to start as the stamp appears; music ducks under it.
 
 Transition SFX: synthesized `dad-revamp/sfx/glitch.mp3` (+ optional soft

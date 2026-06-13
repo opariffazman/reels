@@ -4,9 +4,9 @@
 
 **Goal:** Build a `dad-revamp` Remotion composition — a before/after glow-up reel of the DAD website, framed in a phone mockup, with old→new "build sweep" transitions, a glitch SFX, music bed, and an end-stamp voiceover.
 
-**Architecture:** One new `<Composition>` driven by a single component (`DadRevampVideo`). Six footage beats (alternating old/new) are arranged in a `<TransitionSeries>`; the three OLD→NEW cuts use a custom `buildSweep` `TransitionPresentation` (feathered mask + glowing edge), the two NEW→OLD resets use `fade`. A glitch SFX fires on each sweep; an end stamp + ElevenLabs voiceover close it out.
+**Architecture:** One new `<Composition>` driven by a single component (`DadRevampVideo`). Six footage beats (alternating old/new) are arranged in a `<TransitionSeries>`; the three OLD→NEW cuts use a custom `buildSweep` `TransitionPresentation` (feathered mask + glowing edge), the two NEW→OLD resets use `fade`. A glitch SFX fires on each sweep; an end stamp + Piper voiceover close it out.
 
-**Tech Stack:** Remotion 4, `@remotion/media` (`Video`/`Audio`), `@remotion/transitions` (`TransitionSeries`, `linearTiming`, `fade`, custom presentation), existing `PhoneMockup`, `COLORS`, `INTER`. ElevenLabs TTS for the one VO line. ffmpeg-synthesized glitch SFX (already created).
+**Tech Stack:** Remotion 4, `@remotion/media` (`Video`/`Audio`), `@remotion/transitions` (`TransitionSeries`, `linearTiming`, `fade`, custom presentation), existing `PhoneMockup`, `COLORS`, `INTER`. Piper offline TTS (`en_US-ryan-high`) for the one VO line — same route the clawdlens series uses. ffmpeg-synthesized glitch SFX (already created).
 
 ---
 
@@ -26,10 +26,9 @@ commands with `src/index.ts`, e.g. `npx remotion still src/index.ts dad-revamp �
 
 - **Create** `public/content/dad-revamp/old.webm`, `.../new.webm` — source footage (moved from repo root).
 - *(exists)* `public/content/dad-revamp/sfx/glitch.mp3` — synthesized build-sweep SFX.
-- **Create** `public/voiceover/dad-revamp/end.mp3` — end-stamp VO (generated in Task 5).
+- *(exists)* `public/voiceover/dad-revamp/end.mp3` — end-stamp VO, already generated via Piper (Task 5 documents regeneration/voice swap).
 - **Create** `src/components/BuildSweep.tsx` — the custom OLD→NEW transition presentation.
 - **Create** `src/components/DadRevampVideo.tsx` — the composition component (beats, transitions, labels, audio, end stamp).
-- **Create** `generate-voiceover.ts` (repo root) — one-off ElevenLabs TTS script.
 - **Modify** `src/Root.tsx` — register the `dad-revamp` composition.
 
 ---
@@ -256,7 +255,7 @@ const SWEEP_SFX_FRAMES = TRANSITIONS.map((t, i) =>
 const END_HOLD = sec(3.0);
 const END_STAMP_FROM = DADREVAMP_TOTAL_FRAMES - END_HOLD;
 const VO_FROM = END_STAMP_FROM + sec(0.5);
-const VO_DUR = sec(2.3); // re-measured from end.mp3 in Task 5
+const VO_DUR = sec(1.7); // measured 1.56s from end.mp3 (piper en_US-ryan-high)
 
 // --- Music bed: fade in, steady, duck under the VO, fade out ------------------
 const MUSIC_BASE = 0.4;
@@ -531,67 +530,41 @@ git commit -m "feat(dad-revamp): register dad-revamp composition"
 
 ---
 
-### Task 5: Generate the end-stamp voiceover
+### Task 5: End-stamp voiceover (already generated via Piper)
 
 **Files:**
-- Create: `generate-voiceover.ts` (repo root)
-- Create: `public/voiceover/dad-revamp/end.mp3`
+- *(exists)* `public/voiceover/dad-revamp/end.mp3` — generated + committed (Piper `en_US-ryan-high`, "Rebuilt by Claude Fable.", ~1.56s).
 
-Requires `ELEVENLABS_API_KEY` in the environment (or `.env`). If you don't have
-one, skip generation and drop a hand-made `end.mp3` at the path below instead —
-the rest of the reel renders without it (only the closing line is missing).
+The clawdlens series uses **Piper** offline TTS (see the "Piper TTS" comments in
+`ClawdLensVideo.tsx` / `ClawdLensV2Video.tsx`), so this VO matches that route.
+The end.mp3 is already in the repo, so this task is **only needed to regenerate
+or change the voice**. `VO_DUR` in `DadRevampVideo.tsx` is already set to
+`sec(1.7)` to cover it.
 
-- [ ] **Step 1: Write the generation script**
+- [ ] **Step 1 (only if changing voice/text): regenerate**
 
-```ts
-// One-off: generate the end-stamp VO via ElevenLabs.
-// Run: ELEVENLABS_API_KEY=... bun generate-voiceover.ts
-import { writeFileSync, mkdirSync } from "node:fs";
+Piper is installed via `pipx`; the model lives at
+`~/.cache/piper-voices/en_US-ryan-high.onnx`. To swap voice, download another
+from `https://huggingface.co/rhasspy/piper-voices` (e.g. `en_US-lessac-medium`,
+`en_GB-alan-medium`) and point `-m` at it.
 
-const VOICE_ID = "TX3LPaxmHKxFdv7VOQHJ"; // "Liam" — swap for a robotic/system voice to taste
-const TEXT = "Rebuilt by Claude Fable.";
-const OUT_DIR = "public/voiceover/dad-revamp";
-const OUT = `${OUT_DIR}/end.mp3`;
-
-const key = process.env.ELEVENLABS_API_KEY;
-if (!key) throw new Error("ELEVENLABS_API_KEY not set");
-
-const res = await fetch(
-  `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-  {
-    method: "POST",
-    headers: {
-      "xi-api-key": key,
-      "Content-Type": "application/json",
-      Accept: "audio/mpeg",
-    },
-    body: JSON.stringify({
-      text: TEXT,
-      model_id: "eleven_multilingual_v2",
-      voice_settings: { stability: 0.4, similarity_boost: 0.75, style: 0.5 },
-    }),
-  },
-);
-if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
-
-mkdirSync(OUT_DIR, { recursive: true });
-writeFileSync(OUT, Buffer.from(await res.arrayBuffer()));
-console.log("wrote", OUT);
+Run:
+```bash
+echo "Rebuilt by Claude Fable." | ~/.local/bin/piper \
+  -m ~/.cache/piper-voices/en_US-ryan-high.onnx -f /tmp/end_raw.wav
+ffmpeg -y -i /tmp/end_raw.wav \
+  -af "silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.05:stop_periods=-1:stop_threshold=-50dB:stop_silence=0.15,loudnorm=I=-16:TP=-1.5,aresample=44100" \
+  -ac 1 public/voiceover/dad-revamp/end.mp3
 ```
+For a slower, more deliberate read add `--length-scale 1.1` to the piper call.
 
-- [ ] **Step 2: Run it**
-
-Run: `bun generate-voiceover.ts`
-Expected: `wrote public/voiceover/dad-revamp/end.mp3`.
-
-- [ ] **Step 3: Measure the duration and update `VO_DUR` if needed**
+- [ ] **Step 2 (only if duration changed): update `VO_DUR`**
 
 Run: `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 public/voiceover/dad-revamp/end.mp3`
-Then in `src/components/DadRevampVideo.tsx`, set `VO_DUR = sec(<measured seconds, rounded up>)`.
-If the line is longer than ~2.4s, also bump `END_HOLD` so the VO fits inside the
-end stamp (`END_HOLD` should be ≥ `0.5 + VO_seconds + 0.3`).
+Set `VO_DUR = sec(<measured seconds, rounded up>)` in `DadRevampVideo.tsx`. If the
+line exceeds ~2.4s, also bump `END_HOLD` so it fits (`END_HOLD ≥ 0.5 + VO_seconds + 0.3`).
 
-- [ ] **Step 4: Lint + render the closing clip to hear/see it land**
+- [ ] **Step 3: Render the closing still to confirm the card**
 
 Run:
 ```bash
@@ -601,11 +574,11 @@ npx remotion still dad-revamp out/dr-end.png --frame=1010
 Expected: lint PASS; `out/dr-end.png` shows the new site behind a dark scrim
 with "Rebuilt by **Claude Fable**". (Audio is verified in the Task 7 full render.)
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit (if regenerated)**
 
 ```bash
-git add generate-voiceover.ts public/voiceover/dad-revamp/end.mp3 src/components/DadRevampVideo.tsx
-git commit -m "feat(dad-revamp): generate end-stamp voiceover"
+git add public/voiceover/dad-revamp/end.mp3 src/components/DadRevampVideo.tsx
+git commit -m "feat(dad-revamp): update end-stamp voiceover"
 ```
 
 ---
