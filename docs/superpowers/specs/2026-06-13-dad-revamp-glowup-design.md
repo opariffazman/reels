@@ -7,8 +7,8 @@ Status: approved (design)
 
 A comparison reel for the DAD (Double A Digital) website revamp — follow-up to
 the ClawdLens episode. Two portrait phone screen-recordings (before/after the
-AI revamp) are framed in a single phone mockup; the screen content swaps via
-varied wipe transitions so it reads as the same phone being rebuilt. Glow-up
+AI revamp) play full-bleed; the content swaps via varied build-sweep
+transitions so it reads as the site being rebuilt. Glow-up
 flex tone, music bed only, minimal `OLD`/`NEW` markers.
 
 ## Source footage
@@ -21,8 +21,9 @@ flex tone, music bed only, minimal `OLD`/`NEW` markers.
 Move into `public/content/dad-revamp/old.webm` and `.../new.webm`
 (repo convention: assets live under `public/content/<topic>/`).
 
-Note: source is only 390px wide → slightly soft when scaled into the phone
-screen. Mockup framing (not full-bleed) hides most of it; acceptable for a reel.
+Note: source is only 390px wide → scaled **full-bleed** to fill the 1080-wide
+frame (~2.77×) it's a touch soft. Acceptable for a mobile reel; full-bleed reads
+far more immersive on a phone than a device-in-device mockup.
 
 ## Composition
 
@@ -33,14 +34,19 @@ screen. Mockup framing (not full-bleed) hides most of it; acceptable for a reel.
 
 ## Visual structure
 
-One centered `PhoneMockup` (reused from `src/components/PhoneMockup.tsx`) on a
-branded gradient background. The phone stays in a fixed position across all
-beats; only the screen content and the label change, via whole-frame wipe
-transitions (same phone position both sides → reads as the screen morphing).
+Each recording plays **full-bleed** — `objectFit: cover` filling the entire
+1080×1920 frame (slight top/bottom crop). No phone mockup or container; on a
+phone the device-in-device frame is redundant and full-bleed is more immersive.
+The build-sweep transitions wipe the whole screen.
 
-A pill label at the top of the phone flips each beat:
+A compact pill badge sits in the **top-left corner** (opaque, so it stays legible
+over any content) and flips each beat:
 - `OLD` — muted red
 - `NEW` — accent green (`COLORS.accent`)
+
+The badge is rendered on the absolute timeline (one `Sequence` per beat), not
+inside a beat, so exactly one correct label shows and it swaps cleanly at each
+cut rather than two overlapping during a transition.
 
 ### Beats (alternating old→new, 3 glow-up reveals, varied wipe each time)
 
@@ -118,13 +124,12 @@ Build as a single new component `src/components/DadRevampVideo.tsx`:
   through black, or `none` with a 6-frame black flash). New code, ~40 lines.
 - `Video` + `Audio` from `@remotion/media`, `trimBefore`/`trimAfter` for
   segment windows, `muted` on the footage (recordings have no needed audio).
-- Footage sits inside `PhoneMockup` with `objectFit: cover` (source ratio
-  0.462 vs mockup screen 0.5625 → minor top/bottom crop, acceptable).
+- Footage plays full-bleed: `objectFit: cover` filling the frame (source ratio
+  0.462 vs frame 0.5625 → minor top/bottom crop, acceptable). No `PhoneMockup`.
 - Reuse `COLORS`, `INTER` (`src/fonts`), `staticFile`.
 
-Reuse map: `PhoneMockup`, `COLORS`, `INTER`, `@remotion/media`,
-`@remotion/transitions`, existing music bed. New code = one component + one
-`<Composition>` registration.
+Reuse map: `COLORS`, `INTER`, `@remotion/media`, `@remotion/transitions`,
+existing music bed. New code = one component + one `<Composition>` registration.
 
 ## Success criteria
 

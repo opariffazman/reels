@@ -11,7 +11,6 @@ import type { TransitionPresentation } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { COLORS } from "../colors";
 import { INTER } from "../fonts";
-import { PhoneMockup } from "./PhoneMockup";
 import { buildSweep, type SweepDirection } from "./BuildSweep";
 
 const FPS = 30;
@@ -22,9 +21,6 @@ const NEW_VIDEO = "content/dad-revamp/new.webm";
 const MUSIC = "content/devops1-bootcamp/bg-music-clawdlens-v2.mp3";
 const GLITCH = "content/dad-revamp/sfx/glitch.mp3";
 const END_VO = "voiceover/dad-revamp/end.mp3";
-
-// Phone fills most of the 1920 height; 9:16 frame -> width 844.
-const PHONE_HEIGHT = 1500;
 
 // --- Beats: thematic old/new pairs. Source windows (seconds) are TUNABLE. ----
 type Beat = {
@@ -98,34 +94,28 @@ const musicVolume = (f: number): number => {
   return envelope * Math.min(1, duck);
 };
 
-// --- OLD/NEW pill — floated just above the phone. Rendered on the absolute
+// --- OLD/NEW pill — pinned near the top. Rendered on the absolute
 // timeline (one per beat) rather than inside a beat, so exactly one correct
 // label shows and it swaps cleanly at each cut instead of overlapping during
 // the transition. ------------------------------------------------------------
 const PillOverlay: React.FC<{ label: "OLD" | "NEW" }> = ({ label }) => {
   const isNew = label === "NEW";
   return (
-    <AbsoluteFill
-      style={{
-        alignItems: "center",
-        justifyContent: "flex-start",
-        paddingTop: 138,
-        pointerEvents: "none",
-      }}
-    >
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
       <div
         style={{
-          padding: "10px 30px",
+          position: "absolute",
+          top: 40,
+          left: 32,
+          padding: "9px 26px",
           borderRadius: 999,
           fontFamily: INTER,
           fontWeight: 800,
-          fontSize: 34,
+          fontSize: 32,
           letterSpacing: 3,
           color: isNew ? "#06231a" : "#2a0e0e",
           background: isNew ? COLORS.accent : "#ef4444",
-          boxShadow: `0 8px 30px ${
-            isNew ? "rgba(34,197,94,0.5)" : "rgba(239,68,68,0.45)"
-          }`,
+          boxShadow: "0 6px 24px rgba(0,0,0,0.55)",
         }}
       >
         {label}
@@ -134,34 +124,19 @@ const PillOverlay: React.FC<{ label: "OLD" | "NEW" }> = ({ label }) => {
   );
 };
 
-// --- One beat: the recording inside the phone, on a branded gradient ---------
+// --- One beat: the recording full-bleed (fills the whole 1080x1920 frame) ----
 const BeatView: React.FC<{ beat: Beat }> = ({ beat }) => {
   const src = beat.src === "old" ? OLD_VIDEO : NEW_VIDEO;
   return (
-    <AbsoluteFill
-      style={{
-        justifyContent: "center",
-        alignItems: "center",
-        background:
-          "radial-gradient(120% 120% at 50% 0%, #1b2a4a 0%, #0b1020 55%, #05070f 100%)",
-      }}
-    >
-      <PhoneMockup height={PHONE_HEIGHT}>
-        <AbsoluteFill>
-          <Video
-            src={staticFile(src)}
-            trimBefore={sec(beat.from)}
-            trimAfter={sec(beat.to)}
-            muted
-            objectFit="cover"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectPosition: "center",
-            }}
-          />
-        </AbsoluteFill>
-      </PhoneMockup>
+    <AbsoluteFill style={{ backgroundColor: "#05070f" }}>
+      <Video
+        src={staticFile(src)}
+        trimBefore={sec(beat.from)}
+        trimAfter={sec(beat.to)}
+        muted
+        objectFit="cover"
+        style={{ width: "100%", height: "100%", objectPosition: "center" }}
+      />
     </AbsoluteFill>
   );
 };
