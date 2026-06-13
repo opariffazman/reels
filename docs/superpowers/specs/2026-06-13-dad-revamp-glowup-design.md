@@ -51,6 +51,10 @@ clears for the footage the rest of the beat.
 It is rendered on the absolute timeline (one `Sequence` per beat, length
 `CAPTION_HOLD`), so exactly one label shows at a time.
 
+As a persistent cue, **NEW beats also carry a soft green edge** (inset green
+border + glow inside `BeatView`, only when `src === "new"`), so the rebuilt site
+is identifiable at a glance even between captions. OLD beats have no edge.
+
 ### Stop-scroll on each transition
 
 The browser scroll **freezes** for the duration of every transition, then
@@ -106,7 +110,8 @@ SFX in the piece.
 ### End stamp
 
 Beat 6 holds ~3s (room for the VO to breathe), then a small centered stamp: **"Rebuilt by Claude Fable"** +
-DAD mark, accompanied by a single voiceover line (see Audio). Music ducks
+DAD mark, with a wry subline fading in below — *"(while it lasts — Fable's now
+US-only)"* — and a single voiceover line (see Audio). Music ducks
 under the VO, then fades out. No CTA/link card.
 
 ## Audio

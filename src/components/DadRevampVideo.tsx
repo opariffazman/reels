@@ -175,6 +175,17 @@ const BeatView: React.FC<{
           />
         </Freeze>
       </Freeze>
+      {/* Soft green edge marks the NEW site — instant before/after identification.
+          Part of the beat layer, so it wipes in with the new content. */}
+      {beat.src === "new" && (
+        <AbsoluteFill
+          style={{
+            pointerEvents: "none",
+            boxShadow:
+              "inset 0 0 0 5px rgba(34,197,94,0.6), inset 0 0 70px 6px rgba(34,197,94,0.3)",
+          }}
+        />
+      )}
     </AbsoluteFill>
   );
 };
@@ -187,6 +198,10 @@ const EndStamp: React.FC = () => {
     extrapolateRight: "clamp",
   });
   const rise = interpolate(frame, [0, 22], [40, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const subOpacity = interpolate(frame, [24, 38], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -230,6 +245,19 @@ const EndStamp: React.FC = () => {
           Rebuilt by
           <br />
           <span style={{ color: COLORS.accent }}>Claude Fable</span>
+        </div>
+        <div
+          style={{
+            marginTop: 20,
+            fontWeight: 600,
+            fontStyle: "italic",
+            fontSize: 30,
+            letterSpacing: 1,
+            color: COLORS.muted,
+            opacity: subOpacity,
+          }}
+        >
+          (while it lasts — Fable&rsquo;s now US-only)
         </div>
       </div>
     </AbsoluteFill>
