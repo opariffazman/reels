@@ -1,6 +1,7 @@
 import { Audio, Video } from "@remotion/media";
 import {
   AbsoluteFill,
+  Freeze,
   Sequence,
   interpolate,
   staticFile,
@@ -17,7 +18,7 @@ const FPS = 30;
 const sec = (s: number) => Math.round(s * FPS);
 
 const OLD_VIDEO = "content/dad-revamp/old.webm";
-const NEW_VIDEO = "content/dad-revamp/new.webm";
+const NEW_VIDEO = "content/dad-revamp/new-comprehensive.webm";
 const MUSIC = "content/devops1-bootcamp/bg-music-clawdlens-v2.mp3";
 const GLITCH = "content/dad-revamp/sfx/glitch.mp3";
 const END_VO = "voiceover/dad-revamp/end.mp3";
@@ -29,13 +30,16 @@ type Beat = {
   to: number;
   label: "OLD" | "NEW";
 };
+// NEW windows reference new-comprehensive.webm (richer site tour). Each beat
+// holds its first/last frame still during the surrounding transition (see
+// BeatView freeze), then plays — so windows are ~7s to keep motion after holds.
 const BEATS: Beat[] = [
-  { src: "old", from: 3.5, to: 9.5, label: "OLD" }, // 1 dark generic hero + cards
-  { src: "new", from: 0.5, to: 7.0, label: "NEW" }, // 2 light "We got your back" hero
-  { src: "old", from: 32.5, to: 38.5, label: "OLD" }, // 3 dark AWS project diagrams
-  { src: "new", from: 4.0, to: 10.5, label: "NEW" }, // 4 colorful EdTech product cards
-  { src: "old", from: 9.5, to: 14.5, label: "OLD" }, // 5 dark lower + "Let's chat" CTA
-  { src: "new", from: 40.5, to: 47.5, label: "NEW" }, // 6 Simple E-Commerce product page
+  { src: "old", from: 3.5, to: 10.5, label: "OLD" }, // 1 dark generic hero + cards
+  { src: "new", from: 0.8, to: 7.8, label: "NEW" }, // 2 light "We got your back" hero -> products
+  { src: "old", from: 32.0, to: 39.0, label: "OLD" }, // 3 dark AWS project diagrams
+  { src: "new", from: 19.5, to: 26.5, label: "NEW" }, // 4 Products: Modul / E-Commerce / Bookkeeping
+  { src: "old", from: 9.0, to: 16.0, label: "OLD" }, // 5 dark lower + "Let's chat" CTA
+  { src: "new", from: 49.0, to: 56.0, label: "NEW" }, // 6 Resume-as-Code / Gitverse / Bootcamp flex
 ];
 const BEAT_FRAMES = BEATS.map((b) => sec(b.to) - sec(b.from));
 
@@ -62,6 +66,14 @@ const BEAT_START: number[] = BEAT_FRAMES.reduce<number[]>((acc, _d, i) => {
   acc.push(i === 0 ? 0 : acc[i - 1] + BEAT_FRAMES[i - 1] - TRANSITIONS[i - 1].frames);
   return acc;
 }, []);
+
+// Per-beat freeze holds: a beat freezes its first frame for the duration of the
+// transition entering it, and its last frame for the transition leaving it — so
+// each wipe reveals between two stills (the browser stops scrolling), then plays.
+const FREEZE_START = BEATS.map((_b, i) => (i === 0 ? 0 : TRANSITIONS[i - 1].frames));
+const FREEZE_END = BEATS.map((_b, i) =>
+  i === BEATS.length - 1 ? 0 : TRANSITIONS[i].frames,
+);
 
 // Each build sweep's SFX starts at the entering (new) beat's start.
 const SWEEP_SFX_FRAMES = TRANSITIONS.map((t, i) =>
@@ -94,28 +106,40 @@ const musicVolume = (f: number): number => {
   return envelope * Math.min(1, duck);
 };
 
-// --- OLD/NEW pill — pinned near the top. Rendered on the absolute
-// timeline (one per beat) rather than inside a beat, so exactly one correct
-// label shows and it swaps cleanly at each cut instead of overlapping during
-// the transition. ------------------------------------------------------------
-const PillOverlay: React.FC<{ label: "OLD" | "NEW" }> = ({ label }) => {
+// --- OLD/NEW caption — centered, pops in at each cut and fades out (like a
+// caption announcing the segment). Rendered on the absolute timeline so it
+// appears once per beat, right as the transition into that beat plays. --------
+const CAPTION_HOLD = sec(1.4);
+const CaptionOverlay: React.FC<{ label: "OLD" | "NEW" }> = ({ label }) => {
+  const f = useCurrentFrame();
   const isNew = label === "NEW";
+  const scale = interpolate(f, [0, 9], [0.78, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const opacity = interpolate(
+    f,
+    [0, 6, CAPTION_HOLD - 9, CAPTION_HOLD],
+    [0, 1, 1, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+  );
   return (
-    <AbsoluteFill style={{ pointerEvents: "none" }}>
+    <AbsoluteFill
+      style={{ justifyContent: "center", alignItems: "center", pointerEvents: "none" }}
+    >
       <div
         style={{
-          position: "absolute",
-          top: 40,
-          left: 32,
-          padding: "9px 26px",
+          transform: `scale(${scale})`,
+          opacity,
+          padding: "18px 56px",
           borderRadius: 999,
           fontFamily: INTER,
           fontWeight: 800,
-          fontSize: 32,
-          letterSpacing: 3,
+          fontSize: 84,
+          letterSpacing: 8,
           color: isNew ? "#06231a" : "#2a0e0e",
           background: isNew ? COLORS.accent : "#ef4444",
-          boxShadow: "0 6px 24px rgba(0,0,0,0.55)",
+          boxShadow: "0 18px 60px rgba(0,0,0,0.6)",
         }}
       >
         {label}
@@ -124,19 +148,33 @@ const PillOverlay: React.FC<{ label: "OLD" | "NEW" }> = ({ label }) => {
   );
 };
 
-// --- One beat: the recording full-bleed (fills the whole 1080x1920 frame) ----
-const BeatView: React.FC<{ beat: Beat }> = ({ beat }) => {
+// --- One beat: the recording full-bleed (fills the whole 1080x1920 frame).
+// Two nested Freezes hold the first frame while the transition wipes in, and the
+// last frame while the transition wipes out, so the scroll pauses for each cut
+// then resumes. Shifting trimBefore back by freezeStart keeps source time aligned
+// (frame f shows source second beat.from + (f - freezeStart)/fps while playing). -
+const BeatView: React.FC<{
+  beat: Beat;
+  freezeStart: number;
+  freezeEnd: number;
+  beatFrames: number;
+}> = ({ beat, freezeStart, freezeEnd, beatFrames }) => {
   const src = beat.src === "old" ? OLD_VIDEO : NEW_VIDEO;
+  const playEnd = beatFrames - freezeEnd;
   return (
     <AbsoluteFill style={{ backgroundColor: "#05070f" }}>
-      <Video
-        src={staticFile(src)}
-        trimBefore={sec(beat.from)}
-        trimAfter={sec(beat.to)}
-        muted
-        objectFit="cover"
-        style={{ width: "100%", height: "100%", objectPosition: "center" }}
-      />
+      <Freeze frame={playEnd} active={(f) => f >= playEnd}>
+        <Freeze frame={freezeStart} active={(f) => f < freezeStart}>
+          <Video
+            src={staticFile(src)}
+            trimBefore={sec(beat.from) - freezeStart}
+            trimAfter={sec(beat.to)}
+            muted
+            objectFit="cover"
+            style={{ width: "100%", height: "100%", objectPosition: "center" }}
+          />
+        </Freeze>
+      </Freeze>
     </AbsoluteFill>
   );
 };
@@ -212,7 +250,12 @@ export const DadRevampVideo: React.FC = () => {
               key={`seq-${i}`}
               durationInFrames={BEAT_FRAMES[i]}
             >
-              <BeatView beat={beat} />
+              <BeatView
+                beat={beat}
+                freezeStart={FREEZE_START[i]}
+                freezeEnd={FREEZE_END[i]}
+                beatFrames={BEAT_FRAMES[i]}
+              />
             </TransitionSeries.Sequence>
           );
           if (i === BEATS.length - 1) return [seq];
@@ -233,16 +276,16 @@ export const DadRevampVideo: React.FC = () => {
         })}
       </TransitionSeries>
 
-      {/* OLD/NEW pill on the absolute timeline — one per beat, swaps at each cut */}
-      {BEATS.map((beat, i) => {
-        const from = BEAT_START[i];
-        const to = i < BEATS.length - 1 ? BEAT_START[i + 1] : END_STAMP_FROM;
-        return (
-          <Sequence key={`pill-${i}`} from={from} durationInFrames={to - from}>
-            <PillOverlay label={beat.label} />
-          </Sequence>
-        );
-      })}
+      {/* OLD/NEW caption on the absolute timeline — pops in at each cut, fades out */}
+      {BEATS.map((beat, i) => (
+        <Sequence
+          key={`cap-${i}`}
+          from={BEAT_START[i]}
+          durationInFrames={CAPTION_HOLD}
+        >
+          <CaptionOverlay label={beat.label} />
+        </Sequence>
+      ))}
 
       {/* Glitch SFX on each build sweep */}
       {SWEEP_SFX_FRAMES.map((f, i) => (

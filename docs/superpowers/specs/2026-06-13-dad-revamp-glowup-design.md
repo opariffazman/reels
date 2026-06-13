@@ -16,9 +16,11 @@ flex tone, music bed only, minimal `OLD`/`NEW` markers.
 | File | Role | Specs |
 |------|------|-------|
 | `old-final2.webm` | before revamp | 390×844, 25fps, 42.5s |
-| `new-final2.webm` | after revamp  | 390×844, 25fps, 53.8s |
+| `new-comprehensive.webm` | after revamp | 390×844, 25fps, 64.7s |
 
-Move into `public/content/dad-revamp/old.webm` and `.../new.webm`
+`old` → `public/content/dad-revamp/old.webm`. The "after" footage is
+`new-comprehensive.webm` (a fuller tour of the rebuilt site — hero, product
+suite, engineering/projects, infra, bootcamp) → `.../new-comprehensive.webm`.
 (repo convention: assets live under `public/content/<topic>/`).
 
 Note: source is only 390px wide → scaled **full-bleed** to fill the 1080-wide
@@ -39,25 +41,36 @@ Each recording plays **full-bleed** — `objectFit: cover` filling the entire
 phone the device-in-device frame is redundant and full-bleed is more immersive.
 The build-sweep transitions wipe the whole screen.
 
-A compact pill badge sits in the **top-left corner** (opaque, so it stays legible
-over any content) and flips each beat:
+A **centered caption** announces each segment: a large pill that pops in
+(scale + fade) dead-center as the transition into that beat plays, holds ~1.4s,
+then fades out — so the label reads like a caption at each cut and the center
+clears for the footage the rest of the beat.
 - `OLD` — muted red
 - `NEW` — accent green (`COLORS.accent`)
 
-The badge is rendered on the absolute timeline (one `Sequence` per beat), not
-inside a beat, so exactly one correct label shows and it swaps cleanly at each
-cut rather than two overlapping during a transition.
+It is rendered on the absolute timeline (one `Sequence` per beat, length
+`CAPTION_HOLD`), so exactly one label shows at a time.
+
+### Stop-scroll on each transition
+
+The browser scroll **freezes** for the duration of every transition, then
+resumes — so each wipe reveals between two still frames instead of a moving
+target. In `BeatView`, two nested `<Freeze>`s hold the beat's first frame while
+the transition wipes *in* (`freezeStart` = entering transition length) and its
+last frame while the transition wipes *out* (`freezeEnd` = leaving transition
+length); `trimBefore` is shifted back by `freezeStart` to keep source time
+aligned during the playing middle. Beats are ~7s so motion survives the holds.
 
 ### Beats (alternating old→new, 3 glow-up reveals, varied wipe each time)
 
 | # | Beat | Source window* | Transition into it |
 |---|------|----------------|--------------------|
-| 1 | OLD hero ("DAD makes it simple") | old ~1–7s   | — (open) |
-| 2 | NEW hero ("We got your back")    | new ~1–7s   | **build sweep ↓ (down)** — O→N reveal #1 |
-| 3 | OLD projects (dark AWS diagrams) | old ~36–42s | plain quick cut (dip-to-dark) — topic reset |
-| 4 | NEW products (Modul EdTech cards)| new ~9–16s  | **build sweep ⤡ (diagonal)** — O→N reveal #2 |
-| 5 | OLD footer / CTA                 | old ~30–36s | plain quick cut (dip-to-dark) — topic reset |
-| 6 | NEW product page + footer        | new ~40–48s | **build sweep ◎ (radial)** — O→N reveal #3 |
+| 1 | OLD generic hero + cards         | old 3.5–10.5s | — (open) |
+| 2 | NEW hero ("We got your back")    | new 0.8–7.8s  | **build sweep ↓ (down)** — O→N reveal #1 |
+| 3 | OLD projects (dark AWS diagrams) | old 32–39s    | plain quick cut (dip-to-dark) — topic reset |
+| 4 | NEW product suite (Modul / E-Commerce / Bookkeeping) | new 19.5–26.5s | **build sweep ⤡ (diagonal)** — O→N reveal #2 |
+| 5 | OLD footer / CTA                 | old 9–16s     | plain quick cut (dip-to-dark) — topic reset |
+| 6 | NEW projects (Gitverse / Resume-as-Code / Bootcamp) | new 49–56s | **build sweep ◎ (radial)** — O→N reveal #3 |
 
 *Windows are tunable in-code via a `SEGMENTS`-style array (same pattern as
 `ClawdLensV2Video`), to be finalized by scrubbing during build. Each beat ≈
