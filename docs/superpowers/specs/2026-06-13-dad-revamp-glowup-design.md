@@ -1,0 +1,103 @@
+# DAD site revamp — before/after glow-up reel
+
+Date: 2026-06-13
+Status: approved (design)
+
+## Overview
+
+A comparison reel for the DAD (Double A Digital) website revamp — follow-up to
+the ClawdLens episode. Two portrait phone screen-recordings (before/after the
+AI revamp) are framed in a single phone mockup; the screen content swaps via
+varied wipe transitions so it reads as the same phone being rebuilt. Glow-up
+flex tone, music bed only, minimal `OLD`/`NEW` markers.
+
+## Source footage
+
+| File | Role | Specs |
+|------|------|-------|
+| `old-final2.webm` | before revamp | 390×844, 25fps, 42.5s |
+| `new-final2.webm` | after revamp  | 390×844, 25fps, 53.8s |
+
+Move into `public/content/dad-revamp/old.webm` and `.../new.webm`
+(repo convention: assets live under `public/content/<topic>/`).
+
+Note: source is only 390px wide → slightly soft when scaled into the phone
+screen. Mockup framing (not full-bleed) hides most of it; acceptable for a reel.
+
+## Composition
+
+- id: `dad-revamp`
+- 1080×1920, 30fps
+- ~40s total (~1200 frames; final value derived from the segment array)
+- Registered in `src/Root.tsx` alongside the existing compositions.
+
+## Visual structure
+
+One centered `PhoneMockup` (reused from `src/components/PhoneMockup.tsx`) on a
+branded gradient background. The phone stays in a fixed position across all
+beats; only the screen content and the label change, via whole-frame wipe
+transitions (same phone position both sides → reads as the screen morphing).
+
+A pill label at the top of the phone flips each beat:
+- `OLD` — muted red
+- `NEW` — accent green (`COLORS.accent`)
+
+### Beats (alternating old→new, 3 glow-up reveals, varied wipe each time)
+
+| # | Beat | Source window* | Transition into it |
+|---|------|----------------|--------------------|
+| 1 | OLD hero ("DAD makes it simple") | old ~1–7s   | — (open) |
+| 2 | NEW hero ("We got your back")    | new ~1–7s   | wipe from-left |
+| 3 | OLD projects (dark AWS diagrams) | old ~36–42s | clockWipe (radial) |
+| 4 | NEW products (Modul EdTech cards)| new ~9–16s  | wipe from-top-right (diagonal) |
+| 5 | OLD footer / CTA                 | old ~30–36s | wipe from-bottom (vertical) |
+| 6 | NEW product page + footer        | new ~40–48s | slide (from-right) |
+
+*Windows are tunable in-code via a `SEGMENTS`-style array (same pattern as
+`ClawdLensV2Video`), to be finalized by scrubbing during build. Each beat ≈
+6.5s of footage; transitions ≈ 15–20 frames.
+
+Pattern O→N→O→N→O→N ends on the new site so the glow-up lands. old↔new are
+*thematic* pairs (hero vs hero, products vs projects), not pixel-matched
+scroll positions — fine for the glow-up read.
+
+### End stamp
+
+Beat 6 holds ~2s, then a small centered stamp: **"Rebuilt by Claude Fable"** +
+DAD mark. Music fades out. No CTA/link card.
+
+## Audio
+
+Music bed only — reuse `public/content/devops1-bootcamp/bg-music-clawdlens-v2.mp3`.
+Volume envelope: fade in (~0.5s), steady ~0.4, fade out under the end stamp.
+No ducking (no voiceover). No SFX (optional whoosh on wipes — skip unless it
+feels flat).
+
+## Implementation notes
+
+Build as a single new component `src/components/DadRevampVideo.tsx`:
+- `<TransitionSeries>` from `@remotion/transitions` for the 6 footage beats.
+- `wipe` / `clockWipe` / `slide` presentations (varied direction per
+  transition) from `@remotion/transitions`.
+- `Video` + `Audio` from `@remotion/media`, `trimBefore`/`trimAfter` for
+  segment windows, `muted` on the footage (recordings have no needed audio).
+- Footage sits inside `PhoneMockup` with `objectFit: cover` (source ratio
+  0.462 vs mockup screen 0.5625 → minor top/bottom crop, acceptable).
+- Reuse `COLORS`, `INTER` (`src/fonts`), `staticFile`.
+
+Reuse map: `PhoneMockup`, `COLORS`, `INTER`, `@remotion/media`,
+`@remotion/transitions`, existing music bed. New code = one component + one
+`<Composition>` registration.
+
+## Success criteria
+
+- `bun run lint` passes (eslint + tsc) — this repo's "test".
+- Renders to `out/dad-revamp.mp4` at 1080×1920.
+- Reads clearly as before→after: each O→N wipe is a legible glow-up; `OLD`/`NEW`
+  labels never ambiguous; ends on the new site with the Fable stamp.
+
+## Out of scope
+
+- No voiceover, no captions/subtitles, no CTA/link card.
+- No re-encoding of source footage (trim in-code).
+- No new dependencies.
